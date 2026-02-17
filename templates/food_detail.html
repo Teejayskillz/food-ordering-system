@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ food.name }}{% endblock %}
+
+{% block content %}
+
+<div class="row g-4">
+  <div class="col-md-6">
+    {% if food.image %}
+      <img src="{{ food.image.url }}" class="img-fluid rounded"
+           style="width:100%; height:350px; object-fit:cover;">
+    {% else %}
+      <div class="bg-light d-flex align-items-center justify-content-center"
+           style="height:350px;">
+        <span class="text-muted">No Image</span>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="col-md-6">
+    <h2 class="fw-bold">{{ food.name }}</h2>
+    <p class="text-muted">Category: {{ food.category.name }}</p>
+
+    <h4 class="fw-bold mb-3">₦{{ food.price }}</h4>
+
+    <p>{{ food.description }}</p>
+
+    {% if food.available %}
+      <a class="btn btn-dark btn-lg"
+         href="{% url 'orders:add_to_cart' food.id %}">
+        Add to Cart
+      </a>
+    {% else %}
+      <button class="btn btn-secondary btn-lg" disabled>
+        Out of Stock
+      </button>
+    {% endif %}
+
+    <a class="btn btn-outline-dark ms-2"
+       href="{% url 'menu:menu_list' %}">
+       Back to Menu
+    </a>
+  </div>
+</div>
+
+{% endblock %}

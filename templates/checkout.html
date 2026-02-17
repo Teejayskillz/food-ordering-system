@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Checkout{% endblock %}
+{% block content %}
+<h3 class="mb-3">Checkout</h3>
+
+{% if error %}
+  <div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+
+<form method="post" class="card p-3">
+  {% csrf_token %}
+  <div class="mb-3">
+    <label class="form-label">Phone</label>
+    <input class="form-control" name="phone" required value="{{ initial_phone|default:'' }}">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Delivery Address</label>
+    <textarea class="form-control" name="delivery_address" rows="3" required>{{ initial_address|default:'' }}</textarea>
+  </div>
+  <button class="btn btn-dark">Place Order</button>
+</form>
+{% endblock %}

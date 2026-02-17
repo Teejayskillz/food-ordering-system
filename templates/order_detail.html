@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Order {{ order.id }}{% endblock %}
+{% block content %}
+<h3 class="mb-3">Order #{{ order.id }}</h3>
+
+<p>Status: <strong>{{ order.get_status_display }}</strong></p>
+<p>Total: <strong>₦{{ order.total_amount }}</strong></p>
+<p>Delivery Address: <strong>{{ order.delivery_address }}</strong></p>
+
+<hr>
+<h5>Items</h5>
+<ul class="list-group">
+  {% for i in order.items.all %}
+    <li class="list-group-item d-flex justify-content-between">
+      <span>{{ i.food.name }} (x{{ i.quantity }})</span>
+      <span>₦{{ i.line_total }}</span>
+    </li>
+  {% endfor %}
+</ul>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+{% block content %}
+
+<h3 class="mb-3">My Profile</h3>
+
+<div class="card p-3" style="max-width: 650px;">
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="mb-3">
+      <label class="form-label">Full Name</label>
+      {{ form.full_name }}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Phone</label>
+      {{ form.phone }}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Default Address</label>
+      {{ form.default_address }}
+    </div>
+
+    <button class="btn btn-dark">Save Changes</button>
+  </form>
+</div>
+
+{% endblock %}

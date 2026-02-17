@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}My Orders{% endblock %}
+{% block content %}
+<h3 class="mb-3">My Orders</h3>
+
+{% for o in orders %}
+  <div class="card mb-2 p-3">
+    <div class="d-flex justify-content-between">
+      <div>
+        <strong>Order #{{ o.id }}</strong><br>
+        <span class="text-muted small">{{ o.created_at }}</span>
+      </div>
+      <div>
+        <span class="badge bg-dark">{{ o.get_status_display }}</span>
+        <div class="fw-bold">₦{{ o.total_amount }}</div>
+      </div>
+    </div>
+    <a class="btn btn-sm btn-outline-dark mt-2" href="{% url 'orders:order_detail' o.id %}">View</a>
+  </div>
+{% empty %}
+  <p>No orders yet.</p>
+{% endfor %}
+
+{% endblock %}

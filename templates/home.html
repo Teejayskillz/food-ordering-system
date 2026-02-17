@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+
+<div class="text-center mb-5">
+  <h1 class="fw-bold">Welcome to FoodOrder</h1>
+  <p class="text-muted">Order your favorite meals quickly and easily.</p>
+  <a class="btn btn-dark btn-lg" href="{% url 'menu:menu_list' %}">
+    Browse Menu
+  </a>
+</div>
+
+<hr>
+
+<h4 class="mb-3">Featured Meals</h4>
+
+<div class="row g-3">
+  {% for f in featured %}
+    <div class="col-md-4">
+      <div class="card h-100">
+        {% if f.image %}
+          <img src="{{ f.image.url }}" class="card-img-top" style="height:200px; object-fit:cover;">
+        {% endif %}
+        <div class="card-body">
+          <h5 class="card-title">{{ f.name }}</h5>
+          <p class="card-text small text-muted">
+            {{ f.description|truncatewords:15 }}
+          </p>
+          <p class="fw-bold">₦{{ f.price }}</p>
+
+          <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary btn-sm"
+               href="{% url 'menu:food_detail' f.id %}">
+              View
+            </a>
+            <a class="btn btn-dark btn-sm"
+               href="{% url 'orders:add_to_cart' f.id %}">
+              Add to Cart
+            </a>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <p>No featured meals available.</p>
+  {% endfor %}
+</div>
+
+{% endblock %}

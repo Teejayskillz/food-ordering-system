@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Menu{% endblock %}
+{% block content %}
+
+<h3 class="mb-3">Menu</h3>
+
+<div class="mb-3 d-flex flex-wrap gap-2">
+  <a class="btn btn-sm {% if not active_cat %}btn-dark{% else %}btn-outline-dark{% endif %}"
+     href="{% url 'menu:menu_list' %}">All</a>
+  {% for c in categories %}
+    <a class="btn btn-sm {% if active_cat == c.id %}btn-dark{% else %}btn-outline-dark{% endif %}"
+       href="{% url 'menu:menu_list' %}?cat={{ c.id }}">{{ c.name }}</a>
+  {% endfor %}
+</div>
+
+<div class="row g-3">
+  {% for f in foods %}
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">{{ f.name }}</h5>
+          <p class="card-text small text-muted">{{ f.category.name }}</p>
+          <p class="fw-bold">₦{{ f.price }}</p>
+          <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary btn-sm" href="{% url 'menu:food_detail' f.id %}">View</a>
+            <a class="btn btn-dark btn-sm" href="{% url 'orders:add_to_cart' f.id %}">Add to Cart</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <p>No food items yet. Add some in admin.</p>
+  {% endfor %}
+</div>
+
+{% endblock %}
