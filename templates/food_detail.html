@@ -3,43 +3,87 @@
 
 {% block content %}
 
-<div class="row g-4">
-  <div class="col-md-6">
-    {% if food.image %}
-      <img src="{{ food.image.url }}" class="img-fluid rounded"
-           style="width:100%; height:350px; object-fit:cover;">
-    {% else %}
-      <div class="bg-light d-flex align-items-center justify-content-center"
-           style="height:350px;">
-        <span class="text-muted">No Image</span>
-      </div>
-    {% endif %}
+<div class="d-flex justify-content-between align-items-end mb-3">
+  <div>
+    <h3 class="mb-1">{{ food.name }}</h3>
+    <p class="text-white-50 small mb-0">Meal details and ordering options</p>
   </div>
 
-  <div class="col-md-6">
-    <h2 class="fw-bold">{{ food.name }}</h2>
-    <p class="text-muted">Category: {{ food.category.name }}</p>
+  <a class="btn btn-outline-light btn-sm rounded-pill" href="{% url 'menu:menu_list' %}">
+    ← Back to Menu
+  </a>
+</div>
 
-    <h4 class="fw-bold mb-3">₦{{ food.price }}</h4>
+<div class="row g-4">
 
-    <p>{{ food.description }}</p>
+  <!-- Image Section -->
+  <div class="col-lg-6">
+    <div class="rounded-4 overflow-hidden" style="background: rgba(255,255,255,.05);
+                border: 1px solid rgba(255,255,255,.08);">
 
-    {% if food.available %}
-      <a class="btn btn-dark btn-lg"
-         href="{% url 'orders:add_to_cart' food.id %}">
-        Add to Cart
-      </a>
-    {% else %}
-      <button class="btn btn-secondary btn-lg" disabled>
+      {% if food.image %}
+      <img src="{{ food.image.url }}" alt="{{ food.name }}" style="width:100%; height:420px; object-fit:cover;">
+      {% else %}
+      <div class="d-flex align-items-center justify-content-center"
+        style="height:420px; background: rgba(255,255,255,.06);">
+        <span class="text-white-50">No Image Available</span>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+  <!-- Details Section -->
+  <div class="col-lg-6">
+    <div class="p-4 rounded-4 h-100" style="background: rgba(255,255,255,.05);
+                border: 1px solid rgba(255,255,255,.08);">
+
+      <!-- Category -->
+      <span class="badge rounded-pill mb-2" style="background: rgba(255,255,255,.12);
+                   border: 1px solid rgba(255,255,255,.14);">
+        {{ food.category.name }}
+      </span>
+
+      <!-- Price -->
+      <h2 class="fw-bold mt-2 mb-3">₦{{ food.price }}</h2>
+
+      <!-- Description -->
+      <div class="text-white-50 mb-4">
+        {% if food.description %}
+        {{ food.description }}
+        {% else %}
+        Freshly prepared and served hot.
+        {% endif %}
+      </div>
+
+      <!-- Availability -->
+      {% if food.available %}
+      <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-warning btn-lg rounded-pill px-4"
+          href="{% url 'orders:add_to_cart' food.id %}?next={{ request.get_full_path|urlencode }}">
+          Add to Cart
+        </a>
+        <a class="btn btn-outline-light btn-lg rounded-pill px-4" href="{% url 'orders:cart' %}">
+          View Cart
+        </a>
+      </div>
+
+      <div class="text-success small mt-3">
+        ● Available for order
+      </div>
+      {% else %}
+      <button class="btn btn-secondary btn-lg rounded-pill px-4" disabled>
         Out of Stock
       </button>
-    {% endif %}
 
-    <a class="btn btn-outline-dark ms-2"
-       href="{% url 'menu:menu_list' %}">
-       Back to Menu
-    </a>
+      <div class="text-danger small mt-3">
+        ● Currently unavailable
+      </div>
+      {% endif %}
+
+    </div>
   </div>
+
 </div>
 
 {% endblock %}

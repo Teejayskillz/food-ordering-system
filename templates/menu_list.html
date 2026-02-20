@@ -2,35 +2,135 @@
 {% block title %}Menu{% endblock %}
 {% block content %}
 
-<h3 class="mb-3">Menu</h3>
+<!-- HEADER -->
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+  <div>
+    <h3 class="mb-1">Explore Our Menu</h3>
+    <p class="text-white-50 small mb-0">
+      Choose your favorites and add them to your cart.
+    </p>
+  </div>
 
-<div class="mb-3 d-flex flex-wrap gap-2">
-  <a class="btn btn-sm {% if not active_cat %}btn-dark{% else %}btn-outline-dark{% endif %}"
-     href="{% url 'menu:menu_list' %}">All</a>
-  {% for c in categories %}
-    <a class="btn btn-sm {% if active_cat == c.id %}btn-dark{% else %}btn-outline-dark{% endif %}"
-       href="{% url 'menu:menu_list' %}?cat={{ c.id }}">{{ c.name }}</a>
-  {% endfor %}
+  <div class="d-flex align-items-center gap-2">
+    <span class="badge rounded-pill px-3 py-2"
+      style="background: rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.18);">
+      {{ foods|length }} item{{ foods|length|pluralize }}
+    </span>
+  </div>
 </div>
 
-<div class="row g-3">
+
+<!-- CATEGORY FILTER -->
+<div class="mb-4">
+  <div class="d-flex flex-wrap gap-2">
+
+    <a class="btn btn-sm rounded-pill px-3
+       {% if not active_cat %}
+         btn-warning text-dark
+       {% else %}
+         btn-outline-light
+       {% endif %}" href="{% url 'menu:menu_list' %}">
+      All
+    </a>
+
+    {% for c in categories %}
+    <a class="btn btn-sm rounded-pill px-3
+         {% if active_cat == c.id %}
+           btn-warning text-dark
+         {% else %}
+           btn-outline-light
+         {% endif %}" href="{% url 'menu:menu_list' %}?cat={{ c.id }}">
+      {{ c.name }}
+    </a>
+    {% endfor %}
+
+  </div>
+</div>
+
+
+<!-- FOOD GRID -->
+<div class="row g-4">
+
   {% for f in foods %}
-    <div class="col-md-4">
-      <div class="card h-100">
-        <div class="card-body">
-          <h5 class="card-title">{{ f.name }}</h5>
-          <p class="card-text small text-muted">{{ f.category.name }}</p>
-          <p class="fw-bold">₦{{ f.price }}</p>
-          <div class="d-flex gap-2">
-            <a class="btn btn-outline-secondary btn-sm" href="{% url 'menu:food_detail' f.id %}">View</a>
-            <a class="btn btn-dark btn-sm" href="{% url 'orders:add_to_cart' f.id %}">Add to Cart</a>
-          </div>
+  <div class="col-sm-6 col-xl-4">
+
+    <div class="h-100 rounded-4 overflow-hidden" style="background: rgba(255,255,255,.05);
+                border: 1px solid rgba(255,255,255,.08);
+                transition: all .25s ease;">
+
+      <!-- IMAGE -->
+      <div style="height:210px; overflow:hidden; position:relative;">
+        {% if f.image %}
+        <img src="{{ f.image.url }}" alt="{{ f.name }}"
+          style="width:100%; height:100%; object-fit:cover; transition: transform .3s ease;">
+        {% else %}
+        <div class="h-100 d-flex align-items-center justify-content-center text-white-50"
+          style="background: rgba(255,255,255,.06);">
+          <span class="small">No image</span>
+        </div>
+        {% endif %}
+
+        <!-- PRICE BADGE OVER IMAGE -->
+        <div class="position-absolute bottom-0 end-0 m-2 px-3 py-1 rounded-pill fw-semibold"
+          style="background: rgba(0,0,0,.65); border:1px solid rgba(255,255,255,.15);">
+          ₦{{ f.price }}
         </div>
       </div>
+
+      <!-- BODY -->
+      <div class="p-3 d-flex flex-column">
+
+        <!-- CATEGORY -->
+        <div class="mb-2">
+          <span class="badge rounded-pill" style="background: rgba(255,255,255,.12);
+                       border:1px solid rgba(255,255,255,.14);">
+            {{ f.category.name }}
+          </span>
+        </div>
+
+        <!-- NAME -->
+        <h5 class="mb-1 fw-semibold">{{ f.name }}</h5>
+
+        <!-- DESCRIPTION -->
+        {% if f.description %}
+        <p class="small text-white-50 mb-3">
+          {{ f.description|truncatewords:14 }}
+        </p>
+        {% else %}
+        <p class="small text-white-50 mb-3">
+          Freshly prepared and served hot.
+        </p>
+        {% endif %}
+
+        <!-- ACTION BUTTONS -->
+        <div class="mt-auto pt-2 d-flex gap-2">
+          <a class="btn btn-outline-light btn-sm rounded-pill flex-grow-1" href="{% url 'menu:food_detail' f.id %}">
+            View
+          </a>
+
+          <a class="btn btn-warning btn-sm rounded-pill flex-grow-1"
+            href="{% url 'orders:add_to_cart' f.id %}?next={{ request.get_full_path|urlencode }}">
+            Add to Cart
+          </a>
+        </div>
+
+      </div>
+
     </div>
+
+  </div>
   {% empty %}
-    <p>No food items yet. Add some in admin.</p>
+  <div class="col-12">
+    <div class="p-5 text-center rounded-4" style="background: rgba(255,255,255,.04);
+                border: 1px solid rgba(255,255,255,.08);">
+      <h5 class="fw-semibold mb-2">No food items available</h5>
+      <p class="text-white-50 small mb-0">
+        Add meals from the admin panel and they will appear here.
+      </p>
+    </div>
+  </div>
   {% endfor %}
+
 </div>
 
 {% endblock %}

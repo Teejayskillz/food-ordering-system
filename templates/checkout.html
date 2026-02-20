@@ -1,22 +1,179 @@
 {% extends "base.html" %}
 {% block title %}Checkout{% endblock %}
 {% block content %}
-<h3 class="mb-3">Checkout</h3>
+
+<div class="d-flex justify-content-between align-items-end mb-3">
+  <div>
+    <h3 class="mb-1">Checkout</h3>
+    <p class="text-white-50 small mb-0">Confirm your details and place your order.</p>
+  </div>
+
+  <a class="btn btn-outline-light btn-sm rounded-pill" href="{% url 'orders:cart' %}">
+    ← Back to Cart
+  </a>
+</div>
 
 {% if error %}
-  <div class="alert alert-danger">{{ error }}</div>
+<div class="alert alert-danger rounded-4 mb-3">{{ error }}</div>
 {% endif %}
 
-<form method="post" class="card p-3">
-  {% csrf_token %}
-  <div class="mb-3">
-    <label class="form-label">Phone</label>
-    <input class="form-control" name="phone" required value="{{ initial_phone|default:'' }}">
+<div class="row g-4">
+
+  <!-- Delivery Details -->
+  <div class="col-lg-6">
+    <div class="p-4 rounded-4" style="background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);">
+
+      <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+          <h5 class="mb-1">Delivery Details</h5>
+          <div class="text-white-50 small">Your phone/address will be saved for next time.</div>
+        </div>
+        <span class="badge rounded-pill text-bg-warning text-dark">Step 1</span>
+      </div>
+
+      <form method="post" id="checkoutForm">
+        {% csrf_token %}
+
+        <div class="mb-3">
+          <label class="form-label text-white-50">Phone</label>
+          <input class="form-control bg-dark text-light border-secondary" name="phone" required
+            value="{{ initial_phone|default:'' }}" placeholder="e.g. 08012345678">
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label text-white-50">Delivery Address</label>
+          <textarea class="form-control bg-dark text-light border-secondary" name="delivery_address" rows="3" required
+            placeholder="House number, street, area, city">{{ initial_address|default:'' }}</textarea>
+        </div>
+
+        <!-- Payment Method (Redesigned — no template tags inside attributes) -->
+        <div class="mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <label class="form-label text-white-50 mb-0">Payment Method</label>
+            <span class="badge rounded-pill text-bg-warning text-dark">Step 2</span>
+          </div>
+
+          <!-- hidden input to submit method -->
+          <input type="hidden" name="payment_method" id="paymentMethod" value="{{ selected_payment|default:'cod' }}">
+
+          <div class="p-3 rounded-4"
+            style="background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);">
+
+            <div class="row g-2">
+              <div class="col-12 col-md-6">
+                <button type="button" class="btn w-100 rounded-4 py-3 payment-btn" data-method="cod"
+                  style="border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.03); color: rgba(255,255,255,.92);">
+                  <div class="fw-semibold">Pay on Delivery</div>
+                  <div class="text-white-50 small">Cash / transfer on delivery</div>
+                </button>
+              </div>
+
+              <div class="col-12 col-md-6">
+                <button type="button" class="btn w-100 rounded-4 py-3 payment-btn" data-method="wallet"
+                  style="border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.03); color: rgba(255,255,255,.92);">
+                  <div class="fw-semibold">Pay with Wallet</div>
+                  <div class="text-white-50 small">Balance: ₦{{ wallet_balance|default:"0.00" }}</div>
+                </button>
+              </div>
+            </div>
+
+            <div class="text-white-50 small mt-2">
+              If Wallet balance is not enough, you’ll be asked to fund it first.
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-warning btn-lg rounded-pill w-100">
+          Place Order
+        </button>
+      </form>
+
+    </div>
   </div>
-  <div class="mb-3">
-    <label class="form-label">Delivery Address</label>
-    <textarea class="form-control" name="delivery_address" rows="3" required>{{ initial_address|default:'' }}</textarea>
+
+  <!-- Order Summary -->
+  <div class="col-lg-6">
+    <div class="p-4 rounded-4" style="background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);">
+
+      <div class="d-flex justify-content-between align-items-end mb-3">
+        <div>
+          <h5 class="mb-1">Order Summary</h5>
+          <p class="text-white-50 small mb-0">{{ items|length }} item(s) in your cart</p>
+        </div>
+        <a class="btn btn-outline-light btn-sm rounded-pill" href="{% url 'menu:menu_list' %}">
+          + Add more
+        </a>
+      </div>
+
+      <div class="rounded-4 overflow-hidden" style="border: 1px solid rgba(255,255,255,.08);">
+        <ul class="list-group list-group-flush">
+          {% for i in items %}
+          <li class="list-group-item d-flex justify-content-between align-items-center"
+            style="background: rgba(255,255,255,.04); color: rgba(255,255,255,.92); border-color: rgba(255,255,255,.08);">
+            <div>
+              <div class="fw-semibold">{{ i.food.name }}</div>
+              <div class="text-white-50 small">x{{ i.quantity }}</div>
+            </div>
+            <div class="fw-semibold">₦{{ i.food.price }}</div>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <hr class="my-3" style="border-color: rgba(255,255,255,.08);">
+
+      <div class="d-flex justify-content-between text-white-50">
+        <span>Subtotal</span>
+        <span>₦{{ subtotal }}</span>
+      </div>
+
+      <div class="d-flex justify-content-between text-white-50 mt-1">
+        <span>Delivery</span>
+        <span>₦0</span>
+      </div>
+
+      <div class="d-flex justify-content-between fw-bold fs-5 mt-2">
+        <span>Total</span>
+        <span>₦{{ total }}</span>
+      </div>
+
+      <div class="mt-3 p-3 rounded-4"
+        style="background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);">
+        <div class="d-flex justify-content-between text-white-50">
+          <span>Wallet balance</span>
+          <span>₦{{ wallet_balance|default:"0.00" }}</span>
+        </div>
+      </div>
+
+    </div>
   </div>
-  <button class="btn btn-dark">Place Order</button>
-</form>
+
+</div>
+
+<script>
+  (function () {
+    const hidden = document.getElementById("paymentMethod");
+    const buttons = document.querySelectorAll(".payment-btn");
+
+    function setActive(method) {
+      hidden.value = method;
+
+      buttons.forEach(btn => {
+        const isActive = btn.dataset.method === method;
+
+        // active style
+        btn.style.border = isActive ? "1px solid rgba(255,193,7,.75)" : "1px solid rgba(255,255,255,.12)";
+        btn.style.background = isActive ? "rgba(255,193,7,.12)" : "rgba(255,255,255,.03)";
+      });
+    }
+
+    // default selection from server (or cod)
+    setActive(hidden.value || "cod");
+
+    buttons.forEach(btn => {
+      btn.addEventListener("click", () => setActive(btn.dataset.method));
+    });
+  })();
+</script>
+
 {% endblock %}

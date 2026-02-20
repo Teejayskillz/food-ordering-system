@@ -18,9 +18,9 @@ class CartItem(models.Model):
     class Meta:
         unique_together = ("cart", "food")
 
+    @property
     def line_total(self):
         return self.food.price * self.quantity
-
 
 class Order(models.Model):
     STATUS_CHOICES = [
@@ -35,6 +35,12 @@ class Order(models.Model):
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     created_at = models.DateTimeField(auto_now_add=True)
+    PAYMENT_CHOICES = [
+        ("cod", "Pay on Delivery"),
+        ("wallet", "Wallet"),
+    ]
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_CHOICES, default="cod")
+    is_paid = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-created_at"]
@@ -49,5 +55,6 @@ class OrderItem(models.Model):
     quantity = models.PositiveIntegerField(default=1)
     price_at_purchase = models.DecimalField(max_digits=10, decimal_places=2)
 
+    @property
     def line_total(self):
         return self.price_at_purchase * self.quantity

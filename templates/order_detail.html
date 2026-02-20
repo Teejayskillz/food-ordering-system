@@ -1,20 +1,72 @@
 {% extends "base.html" %}
 {% block title %}Order {{ order.id }}{% endblock %}
 {% block content %}
-<h3 class="mb-3">Order #{{ order.id }}</h3>
 
-<p>Status: <strong>{{ order.get_status_display }}</strong></p>
-<p>Total: <strong>₦{{ order.total_amount }}</strong></p>
-<p>Delivery Address: <strong>{{ order.delivery_address }}</strong></p>
+<div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-3">
+  <div>
+    <h3 class="mb-1">Order #{{ order.id }}</h3>
+    <p class="text-white-50 small mb-0">Order details and items summary.</p>
+  </div>
 
-<hr>
-<h5>Items</h5>
-<ul class="list-group">
-  {% for i in order.items.all %}
-    <li class="list-group-item d-flex justify-content-between">
-      <span>{{ i.food.name }} (x{{ i.quantity }})</span>
-      <span>₦{{ i.line_total }}</span>
+  <a class="btn btn-outline-light btn-sm rounded-pill" href="{% url 'orders:order_list' %}">
+    ← Back to Orders
+  </a>
+</div>
+
+<!-- Summary -->
+<div class="p-3 p-md-4 rounded-4 mb-3" style="background: rgba(255,255,255,.05);
+            border: 1px solid rgba(255,255,255,.08);">
+
+  <div class="row g-3">
+    <div class="col-md-4">
+      <div class="text-white-50 small">Status</div>
+      <span class="badge rounded-pill"
+        style="background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.14);">
+        {{ order.get_status_display }}
+      </span>
+    </div>
+
+    <div class="col-md-4">
+      <div class="text-white-50 small">Total</div>
+      <div class="fw-bold fs-5">₦{{ order.total_amount }}</div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="text-white-50 small">Delivery Address</div>
+      <div class="fw-semibold">{{ order.delivery_address }}</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Items -->
+<div class="d-flex align-items-end justify-content-between mb-2">
+  <h5 class="mb-0">Items</h5>
+  <span class="text-white-50 small">{{ order.items.all|length }} item(s)</span>
+</div>
+
+<div class="rounded-4 overflow-hidden" style="border: 1px solid rgba(255,255,255,.08);">
+
+  <ul class="list-group list-group-flush">
+    {% for i in order.items.all %}
+    <li class="list-group-item d-flex justify-content-between align-items-center"
+      style="background: rgba(255,255,255,.04); color: rgba(255,255,255,.92); border-color: rgba(255,255,255,.08);">
+
+      <div>
+        <div class="fw-semibold">{{ i.food.name }}</div>
+        <div class="text-white-50 small">Qty: x{{ i.quantity }}</div>
+      </div>
+
+      <div class="fw-semibold">₦{{ i.line_total }}</div>
     </li>
-  {% endfor %}
-</ul>
+    {% empty %}
+    <li class="list-group-item"
+      style="background: rgba(255,255,255,.04); color: rgba(255,255,255,.92); border-color: rgba(255,255,255,.08);">
+      <span class="text-white-50">No items found for this order.</span>
+    </li>
+    {% endfor %}
+  </ul>
+
+</div>
+
 {% endblock %}

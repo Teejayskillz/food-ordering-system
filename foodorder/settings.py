@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-n_#vo1y)i&hrj7k7&&@fp0=81x&_z8fwmx(9($25pqmzmy2(xa
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['undynamically-subcalcareous-raleigh.ngrok-free.dev', '127.0.0.1']
 
 
 # Application definition
@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "menu",
     "orders",
     "accounts.apps.AccountsConfig",
+    "wallet.apps.WalletConfig",
 
 
 ]
@@ -66,6 +67,9 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'orders.context_processors.cart_count',
+                'wallet.context_processors.wallet_context',
+
             ],
         },
     },
@@ -119,7 +123,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"

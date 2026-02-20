@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Wallet{% endblock %}
+{% block content %}
+
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+    <div>
+        <h3 class="mb-1">Wallet</h3>
+        <p class="text-white-50 small mb-0">Balance, top-ups, and transaction history.</p>
+    </div>
+
+    <a class="btn btn-warning btn-sm rounded-pill" href="{% url 'wallet:topup_create' %}">
+        + Fund Wallet
+    </a>
+</div>
+
+<div class="row g-3">
+
+    <!-- Balance card -->
+    <div class="col-lg-4">
+        <div class="p-4 rounded-4" style="background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);">
+            <div class="text-white-50 small">Current Balance</div>
+            <div class="fw-bold display-6 mb-2">₦{{ wallet.balance }}</div>
+
+            <div class="text-white-50 small">
+                Use wallet during checkout to pay instantly.
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent topups -->
+    <div class="col-lg-8">
+        <div class="p-4 rounded-4" style="background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);">
+            <div class="d-flex justify-content-between align-items-end mb-2">
+                <div>
+                    <h5 class="mb-1">Top-up Requests</h5>
+                    <p class="text-white-50 small mb-0">Pending/Approved/Rejected top-ups.</p>
+                </div>
+            </div>
+
+            <div class="rounded-4 overflow-hidden" style="border: 1px solid rgba(255,255,255,.08);">
+                <ul class="list-group list-group-flush">
+                    {% for t in topups %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center" style="background: rgba(255,255,255,.04);
+                       color: rgba(255,255,255,.92);
+                       border-color: rgba(255,255,255,.08);">
+                        <div>
+                            <div class="fw-semibold">₦{{ t.amount }}</div>
+                            <div class="text-white-50 small">{{ t.created_at }}</div>
+                        </div>
+
+                        <span class="badge rounded-pill"
+                            style="background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.14);">
+                            {{ t.get_status_display }}
+                        </span>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item" style="background: rgba(255,255,255,.04);
+                       color: rgba(255,255,255,.92);
+                       border-color: rgba(255,255,255,.08);">
+                        <span class="text-white-50">No top-ups yet.</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transactions -->
+    <div class="col-12">
+        <div class="p-4 rounded-4" style="background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);">
+            <div class="d-flex justify-content-between align-items-end mb-2">
+                <div>
+                    <h5 class="mb-1">Transaction History</h5>
+                    <p class="text-white-50 small mb-0">Credits and debits on your wallet.</p>
+                </div>
+            </div>
+
+            <div class="rounded-4 overflow-hidden" style="border: 1px solid rgba(255,255,255,.08);">
+                <ul class="list-group list-group-flush">
+                    {% for tx in transactions %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center" style="background: rgba(255,255,255,.04);
+                       color: rgba(255,255,255,.92);
+                       border-color: rgba(255,255,255,.08);">
+                        <div>
+                            <div class="fw-semibold">
+                                {{ tx.get_tx_type_display }} • {{ tx.get_source_display }}
+                            </div>
+                            <div class="text-white-50 small">{{ tx.created_at }}</div>
+
+                            {% if tx.order %}
+                            <div class="text-white-50 small">Order #{{ tx.order.id }}</div>
+                            {% endif %}
+                            {% if tx.note %}
+                            <div class="text-white-50 small">{{ tx.note }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="fw-bold">
+                            {% if tx.tx_type == "debit" %}-{% else %}+{% endif %}₦{{ tx.amount }}
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item" style="background: rgba(255,255,255,.04);
+                       color: rgba(255,255,255,.92);
+                       border-color: rgba(255,255,255,.08);">
+                        <span class="text-white-50">No transactions yet.</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

@@ -22,3 +22,9 @@ def menu_list(request):
 def food_detail(request, pk):
     food = get_object_or_404(FoodItem, pk=pk, available=True)
     return render(request, "food_detail.html", {"food": food})
+
+from django.shortcuts import render
+
+def service_worker(request):
+    response = render(request, "sw.js", content_type="application/javascript")
+    return response

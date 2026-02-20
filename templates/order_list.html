@@ -1,24 +1,62 @@
 {% extends "base.html" %}
 {% block title %}My Orders{% endblock %}
 {% block content %}
-<h3 class="mb-3">My Orders</h3>
 
-{% for o in orders %}
-  <div class="card mb-2 p-3">
-    <div class="d-flex justify-content-between">
-      <div>
-        <strong>Order #{{ o.id }}</strong><br>
-        <span class="text-muted small">{{ o.created_at }}</span>
-      </div>
-      <div>
-        <span class="badge bg-dark">{{ o.get_status_display }}</span>
-        <div class="fw-bold">₦{{ o.total_amount }}</div>
-      </div>
-    </div>
-    <a class="btn btn-sm btn-outline-dark mt-2" href="{% url 'orders:order_detail' o.id %}">View</a>
+<div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-3">
+  <div>
+    <h3 class="mb-1">My Orders</h3>
+    <p class="text-white-50 small mb-0">Track your recent orders and their status.</p>
   </div>
-{% empty %}
-  <p>No orders yet.</p>
-{% endfor %}
+
+  <span class="badge rounded-pill text-bg-warning text-dark">
+    {{ orders|length }} orders
+  </span>
+</div>
+
+<div class="row g-3">
+  {% for o in orders %}
+  <div class="col-12">
+    <div class="p-3 p-md-4 rounded-4" style="background: rgba(255,255,255,.05);
+                  border: 1px solid rgba(255,255,255,.08);">
+
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+        <div>
+          <div class="fw-semibold fs-6">Order #{{ o.id }}</div>
+          <div class="text-white-50 small">
+            {{ o.created_at }}
+          </div>
+        </div>
+
+        <div class="text-end">
+          <span class="badge rounded-pill"
+            style="background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.14);">
+            {{ o.get_status_display }}
+          </span>
+          <div class="fw-bold mt-1">₦{{ o.total_amount }}</div>
+        </div>
+      </div>
+
+      <div class="d-flex flex-wrap gap-2 mt-3">
+        <a class="btn btn-outline-light btn-sm rounded-pill" href="{% url 'orders:order_detail' o.id %}">
+          View Details
+        </a>
+
+        {# Optional: if you ever add cancel/reorder later, buttons can go here #}
+      </div>
+
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12">
+    <div class="p-4 rounded-4" style="background: rgba(255,255,255,.04);
+                  border: 1px solid rgba(255,255,255,.08);">
+      <p class="mb-1 fw-semibold">No orders yet.</p>
+      <p class="mb-0 text-white-50 small">
+        When you checkout, your orders will appear here.
+      </p>
+    </div>
+  </div>
+  {% endfor %}
+</div>
 
 {% endblock %}

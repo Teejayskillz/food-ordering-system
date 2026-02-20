@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Fund Wallet{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-end mb-3">
+    <div>
+        <h3 class="mb-1">Fund Wallet</h3>
+        <p class="text-white-50 small mb-0">Upload payment proof. Admin will approve and credit your wallet.</p>
+    </div>
+
+    <a class="btn btn-outline-light btn-sm rounded-pill" href="{% url 'menu:home' %}">
+        ← Back Home
+    </a>
+</div>
+
+{% if error %}
+<div class="alert alert-danger rounded-4 mb-3">{{ error }}</div>
+{% endif %}
+
+{% if messages %}
+{% for m in messages %}
+<div class="alert alert-success rounded-4 mb-3">{{ m }}</div>
+{% endfor %}
+{% endif %}
+
+<div class="row g-4">
+
+    <!-- Instructions / Account -->
+    <div class="col-lg-5">
+        <div class="p-4 rounded-4" style="background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);">
+            <h5 class="mb-2">Payment Account</h5>
+            <p class="text-white-50 small mb-3">
+                Transfer to the account below, then upload your screenshot proof.
+            </p>
+
+            <!-- Replace these with your real details -->
+            <div class="p-3 rounded-4"
+                style="background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);">
+                <div class="d-flex justify-content-between">
+                    <span class="text-white-50">Bank</span>
+                    <span class="fw-semibold">Your Bank Name</span>
+                </div>
+                <div class="d-flex justify-content-between mt-2">
+                    <span class="text-white-50">Account Name</span>
+                    <span class="fw-semibold">Your Account Name</span>
+                </div>
+                <div class="d-flex justify-content-between mt-2">
+                    <span class="text-white-50">Account Number</span>
+                    <span class="fw-semibold">0123456789</span>
+                </div>
+            </div>
+
+            <hr class="my-3" style="border-color: rgba(255,255,255,.08);">
+
+            <div class="d-flex justify-content-between text-white-50">
+                <span>Wallet balance</span>
+                <span>₦{{ wallet.balance }}</span>
+            </div>
+
+            <p class="text-white-50 small mt-3 mb-0">
+                Note: Uploads are reviewed manually. Your wallet will update after approval.
+            </p>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="col-lg-7">
+        <div class="p-4 rounded-4" style="background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);">
+            <h5 class="mb-3">Submit Top-up</h5>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label class="form-label text-white-50">Amount (₦)</label>
+                    <input class="form-control bg-dark text-light border-secondary" name="amount" inputmode="decimal"
+                        placeholder="e.g. 2000" value="{{ amount|default:'' }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-white-50">Reference (optional)</label>
+                    <input class="form-control bg-dark text-light border-secondary" name="reference"
+                        placeholder="e.g. transfer narration / ref" value="{{ reference|default:'' }}">
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label text-white-50">Payment Proof (screenshot)</label>
+                    <input class="form-control bg-dark text-light border-secondary" type="file" name="proof"
+                        accept="image/*" required>
+                </div>
+
+                <button class="btn btn-warning btn-lg rounded-pill w-100">
+                    Submit for Approval
+                </button>
+
+            </form>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
