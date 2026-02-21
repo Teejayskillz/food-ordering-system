@@ -1,38 +1,48 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Home{% endblock %}
 {% block content %}
 
 <style>
+  /* HERO with background image + overlay (Uber Eats vibe) */
   .hero-wrap {
     position: relative;
     overflow: hidden;
     border-radius: 22px;
     border: 1px solid rgba(255, 255, 255, .10);
-    background:
-      radial-gradient(800px 300px at 10% 10%, rgba(255, 193, 7, .26), transparent 60%),
-      radial-gradient(700px 300px at 90% 20%, rgba(13, 110, 253, .18), transparent 55%),
-      linear-gradient(135deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .02));
+    min-height: 420px;
+
+    /* Put your hero image here */
+    background: linear-gradient(90deg,
+      rgba(11, 18, 32, .90) 0%,
+      rgba(11, 18, 32, .75) 45%,
+      rgba(11, 18, 32, .30) 75%,
+      rgba(11, 18, 32, .12) 100%),
+    url("{% static 'img/hero-food.jpg' %}") center/cover no-repeat;
   }
 
   .hero-blur {
     position: absolute;
-    inset: -40px;
-    background: radial-gradient(300px 200px at 30% 30%, rgba(255, 193, 7, .22), transparent 60%);
-    filter: blur(18px);
-    opacity: .9;
+    inset: 0;
+    background:
+      radial-gradient(800px 300px at 10% 10%, rgba(255, 193, 7, .22), transparent 60%),
+      radial-gradient(700px 300px at 90% 20%, rgba(13, 110, 253, .18), transparent 55%);
+    opacity: .95;
     pointer-events: none;
   }
 
   .stat-card {
-    background: rgba(255, 255, 255, .05);
-    border: 1px solid rgba(255, 255, 255, .08);
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid rgba(255, 255, 255, .10);
     border-radius: 18px;
+    backdrop-filter: blur(10px);
   }
 
   .mini-card {
-    background: rgba(255, 255, 255, .04);
-    border: 1px solid rgba(255, 255, 255, .08);
+    background: rgba(255, 255, 255, .05);
+    border: 1px solid rgba(255, 255, 255, .10);
     border-radius: 18px;
+    backdrop-filter: blur(10px);
   }
 
   .pill-chip {
@@ -40,9 +50,24 @@
     border: 1px solid rgba(255, 255, 255, .12);
     color: rgba(255, 255, 255, .85);
   }
+
+  /* Map box */
+  #homeMap {
+    width: 100%;
+    height: 250px;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, .10);
+    background: rgba(255, 255, 255, .04);
+  }
+
+  .map-hint {
+    font-size: .85rem;
+    color: rgba(255, 255, 255, .65);
+  }
 </style>
 
-<!-- HERO (Premium) -->
+<!-- HERO (Premium) with MAP -->
 <section class="hero-wrap p-4 p-md-5 mb-4">
   <div class="hero-blur"></div>
 
@@ -56,7 +81,7 @@
 
       <h1 class="fw-bold display-6 mb-2">Order food without stress.</h1>
       <p class="text-white-50 mb-4" style="max-width: 52ch;">
-        Browse meals, add to cart, and checkout in minutes.
+        Pick a delivery point, browse meals, add to cart, and checkout in minutes.
         Track your orders anytime from your dashboard.
       </p>
 
@@ -85,8 +110,32 @@
       </div>
     </div>
 
-    <!-- Right side "promo card" -->
+    <!-- Right side (Map + Today's pick) -->
     <div class="col-lg-5">
+      <div class="mini-card p-4 mb-3">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            <div class="fw-semibold">Choose delivery area</div>
+            <div class="map-hint">Tap the map to set a delivery point.</div>
+          </div>
+          <span class="badge rounded-pill text-bg-warning text-dark">Live</span>
+        </div>
+
+        <div id="homeMap" class="mb-3"></div>
+
+        <input type="hidden" id="delivery_point" name="delivery_point" value="">
+        <div class="text-white-50 small mb-3" id="pickedText">No delivery point selected yet.</div>
+
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-light btn-sm rounded-pill flex-grow-1" type="button" id="useMyLocationBtn">
+            Use my location
+          </button>
+          <a class="btn btn-warning btn-sm rounded-pill flex-grow-1" href="{% url 'menu:menu_list' %}">
+            Order now
+          </a>
+        </div>
+      </div>
+
       <div class="mini-card p-4">
         <div class="d-flex justify-content-between align-items-start mb-3">
           <div>
@@ -224,5 +273,57 @@
     {% endfor %}
   </div>
 </section>
+
+<!-- Leaflet Map (no API key) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+  (function () {
+    // Default: Lagos (change if you want)
+    const defaultLatLng = [6.5244, 3.3792];
+
+    const map = L.map('homeMap', { zoomControl: true }).setView(defaultLatLng, 12);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let marker = null;
+
+    function setPoint(lat, lng) {
+      const val = lat.toFixed(6) + ',' + lng.toFixed(6);
+      document.getElementById('delivery_point').value = val;
+      document.getElementById('pickedText').textContent = 'Selected point: ' + val;
+
+      if (marker) marker.setLatLng([lat, lng]);
+      else marker = L.marker([lat, lng]).addTo(map);
+    }
+
+    map.on('click', function (e) {
+      setPoint(e.latlng.lat, e.latlng.lng);
+    });
+
+    document.getElementById('useMyLocationBtn').addEventListener('click', function () {
+      if (!navigator.geolocation) {
+        document.getElementById('pickedText').textContent = 'Geolocation not supported on this browser.';
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        function (pos) {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          map.setView([lat, lng], 14);
+          setPoint(lat, lng);
+        },
+        function () {
+          document.getElementById('pickedText').textContent = 'Could not get your location (permission denied or unavailable).';
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    });
+  })();
+</script>
 
 {% endblock %}
