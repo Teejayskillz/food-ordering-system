@@ -4,6 +4,7 @@ from django.shortcuts import redirect, render
 from django.contrib.auth.decorators import login_required
 from .forms import ProfileForm
 
+
 @login_required
 def profile_view(request):
     profile = getattr(request.user, "profile", None)
@@ -24,9 +25,38 @@ def profile_view(request):
     return render(request, "accounts/profile.html", {"form": form})
 
 
+def _redirect_after_login(user):
+    # Admin/staff go to frontend admin dashboard
+    if user.is_staff:
+        return redirect("control:dashboard")
+    # Normal users
+    return redirect("menu:home")
+
+
+def login_view(request):
+    # If already logged in, route correctly
+    if request.user.is_authenticated:
+        return _redirect_after_login(request.user)
+
+    error = None
+
+    if request.method == "POST":
+        email = request.POST.get("email", "").strip().lower()
+        password = request.POST.get("password", "")
+
+        user = authenticate(request, username=email, password=password)
+        if user is None:
+            error = "Invalid email or password."
+        else:
+            login(request, user)
+            return _redirect_after_login(user)
+
+    return render(request, "accounts/login.html", {"error": error})
+
+
 def register_view(request):
     if request.user.is_authenticated:
-        return redirect("menu:home")
+        return _redirect_after_login(request.user)
 
     error = None
 
@@ -53,33 +83,11 @@ def register_view(request):
             user.profile.save()
 
             login(request, user)
-            return redirect("menu:home")
-
+            return _redirect_after_login(user)
 
     return render(request, "accounts/register.html", {"error": error})
-
-
-def login_view(request):
-    if request.user.is_authenticated:
-        return redirect("menu:home")
-
-    error = None
-
-    if request.method == "POST":
-        email = request.POST.get("email", "").strip().lower()
-        password = request.POST.get("password", "")
-
-        user = authenticate(request, username=email, password=password)
-        if user is None:
-            error = "Invalid email or password."
-        else:
-            login(request, user)
-            return redirect("menu:home")
-
-    return render(request, "accounts/login.html", {"error": error})
 
 
 def logout_view(request):
     logout(request)
     return redirect("menu:home")
-

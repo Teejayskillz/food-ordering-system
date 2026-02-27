@@ -18,6 +18,8 @@ class FoodItem(models.Model):
     image = models.ImageField(upload_to="foods/", blank=True, null=True)
     available = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    is_archived = models.BooleanField(default=False)
+    archived_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["name"]

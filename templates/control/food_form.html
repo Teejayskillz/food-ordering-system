@@ -1,0 +1,9 @@
+<h1>{% if mode == "create" %}Add Food Item{% else %}Edit Food Item{% endif %}</h1>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save</button>
+</form>
+
+<p><a href="{% url 'control:menu_list' %}">← Back to menu</a></p>

@@ -1,0 +1,97 @@
+{% extends "control/base.html" %}
+{% block title %}Orders{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="mb-0">Orders</h3>
+</div>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-12 col-md-4">
+        <input class="form-control" name="q" value="{{ q }}" placeholder="Search order id, email, phone...">
+    </div>
+
+    <div class="col-12 col-md-3">
+        <select class="form-select" name="status">
+            <option value="">All statuses</option>
+
+            {% for s in allowed_statuses %}
+            {% if status == s %}
+            <option value="{{ s }}" selected>{{ s }}</option>
+            {% else %}
+            <option value="{{ s }}">{{ s }}</option>
+            {% endif %}
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col-12 col-md-2">
+        <button class="btn btn-primary w-100" type="submit">Filter</button>
+    </div>
+</form>
+
+<div class="table-responsive bg-white border rounded">
+    <table class="table table-striped mb-0">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>User</th>
+                <th>Status</th>
+                <th>Total</th>
+                <th>Paid</th>
+                <th>Method</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for o in page_obj %}
+            <tr>
+                <td><a href="{% url 'control:order_detail' o.id %}">#{{ o.id }}</a></td>
+                <td>{{ o.user }}</td>
+                <td><span class="badge text-bg-secondary">{{ o.status }}</span></td>
+                <td>₦{{ o.total_amount }}</td>
+                <td>
+                    {% if o.is_paid %}
+                    <span class="badge text-bg-success">Yes</span>
+                    {% else %}
+                    <span class="badge text-bg-warning">No</span>
+                    {% endif %}
+                </td>
+                <td>{{ o.payment_method }}</td>
+                <td>{{ o.created_at }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center py-4">No orders found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<nav class="mt-3">
+    <ul class="pagination">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&status={{ status }}&q={{ q }}">Prev</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Prev</span></li>
+        {% endif %}
+
+        <li class="page-item disabled">
+            <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        </li>
+
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}&status={{ status }}&q={{ q }}">Next</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Next</span></li>
+        {% endif %}
+    </ul>
+</nav>
+
+{% endblock %}

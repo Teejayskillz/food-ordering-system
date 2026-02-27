@@ -1,0 +1,114 @@
+{% extends "control/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+
+<h3 class="mb-3">Dashboard</h3>
+
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="text-muted">Today Revenue</div>
+                <div class="fs-4 fw-bold">₦{{ today_revenue }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="text-muted">Last 7 Days</div>
+                <div class="fs-4 fw-bold">₦{{ last7_revenue }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="text-muted">Paid Orders</div>
+                <div class="fs-4 fw-bold">{{ paid_orders }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="text-muted">Pending Top-ups</div>
+                <div class="fs-4 fw-bold">{{ pending_topups }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <h5 class="mb-3">Recent Orders</h5>
+                    <a href="{% url 'control:orders_list' %}">View all</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>User</th>
+                                <th>Status</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for o in recent_orders %}
+                            <tr>
+                                <td><a href="{% url 'control:order_detail' o.id %}">#{{ o.id }}</a></td>
+                                <td>{{ o.user }}</td>
+                                <td>{{ o.status }}</td>
+                                <td>₦{{ o.total_amount }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center">No orders yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-5">
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <h5 class="mb-3">Order Status</h5>
+                <ul class="list-group">
+                    <li class="list-group-item d-flex justify-content-between"><span>Pending</span><b>{{ pending_orders
+                            }}</b></li>
+                    <li class="list-group-item d-flex justify-content-between"><span>Preparing</span><b>{{
+                            preparing_orders }}</b></li>
+                    <li class="list-group-item d-flex justify-content-between"><span>Delivered</span><b>{{
+                            delivered_orders }}</b></li>
+                    <li class="list-group-item d-flex justify-content-between"><span>Cancelled</span><b>{{
+                            cancelled_orders }}</b></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="mb-3">Top Foods</h5>
+                <ul class="list-group">
+                    {% for x in top_foods %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>{{ x.food__name }}</span><b>{{ x.qty }}</b>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item">No sales yet.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

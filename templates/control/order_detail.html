@@ -1,0 +1,77 @@
+<h1>Order #{{ order.id }}</h1>
+
+<p><b>User:</b> {{ order.user }}</p>
+<p><b>Phone:</b> {{ order.phone }}</p>
+<p><b>Delivery Address:</b> {{ order.delivery_address }}</p>
+
+<p>
+    <b>Status:</b> {{ order.status }} |
+    <b>Total:</b> ₦{{ order.total_amount }} |
+    <b>Payment:</b> {{ order.payment_method }} |
+    <b>Paid:</b> {{ order.is_paid }}
+</p>
+
+<hr>
+
+<h2>Update Status</h2>
+<form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="update_status" />
+    <select name="status">
+        {% for s in allowed_statuses %}
+        <option value="{{ s }}" {% if order.status==s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Save</button>
+</form>
+
+<hr>
+
+<h2>Payment Actions</h2>
+<form method="post" style="display:inline;">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="mark_paid" />
+    <button type="submit">Mark as Paid</button>
+</form>
+
+<form method="post" style="display:inline; margin-left:10px;">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="unmark_paid" />
+    <button type="submit">Unmark Paid</button>
+</form>
+
+<p style="font-size: 14px;">
+    Note: Unmark Paid does not refund wallet automatically.
+</p>
+
+<hr>
+
+<h2>Items</h2>
+<table border="1" cellpadding="8" cellspacing="0">
+    <thead>
+        <tr>
+            <th>Food</th>
+            <th>Qty</th>
+            <th>Price at purchase</th>
+            <th>Line total</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for it in order.items.all %}
+        <tr>
+            <td>{{ it.food.name }}</td>
+            <td>{{ it.quantity }}</td>
+            <td>₦{{ it.price_at_purchase }}</td>
+            <td>₦{{ it.line_total }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">No items on this order.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<p style="margin-top:16px;">
+    <a href="{% url 'control:orders_list' %}">← Back to orders</a>
+</p>

@@ -1,0 +1,9 @@
+<h1>{% if mode == "create" %}Add Category{% else %}Edit Category{% endif %}</h1>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save</button>
+</form>
+
+<p><a href="{% url 'control:menu_list' %}">← Back to menu</a></p>

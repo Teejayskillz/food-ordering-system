@@ -1,0 +1,32 @@
+<h1>Review Top-up #{{ topup.id }}</h1>
+
+<p><b>User:</b> {{ topup.user }}</p>
+<p><b>Amount:</b> ₦{{ topup.amount }}</p>
+<p><b>Status:</b> {{ topup.status }}</p>
+<p><b>Reference:</b> {{ topup.reference }}</p>
+
+<p><b>Proof:</b></p>
+{% if topup.proof %}
+<img src="{{ topup.proof.url }}" style="max-width:420px; border:1px solid #ddd;" />
+{% else %}
+<p>No proof uploaded.</p>
+{% endif %}
+
+<hr>
+
+{% if topup.status == "pending" %}
+<form method="post">
+    {% csrf_token %}
+    <p>
+        <textarea name="admin_note" rows="3" cols="60" placeholder="Admin note..."></textarea>
+    </p>
+
+    <button type="submit" name="action" value="approve">Approve</button>
+    <button type="submit" name="action" value="reject">Reject</button>
+</form>
+{% else %}
+<p><b>Reviewed by:</b> {{ topup.reviewed_by }} at {{ topup.reviewed_at }}</p>
+<p><b>Admin note:</b> {{ topup.admin_note }}</p>
+{% endif %}
+
+<p><a href="{% url 'control:topups_list' %}">← Back to top-ups</a></p>
