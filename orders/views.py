@@ -6,6 +6,9 @@ from menu.models import FoodItem
 from .models import Cart, CartItem, Order, OrderItem
 from django.contrib import messages
 from wallet.models import Wallet, WalletTransaction
+import json
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 
 
 def _get_or_create_cart(user):
@@ -214,3 +217,32 @@ def order_list(request):
 def order_detail(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
     return render(request, "order_detail.html", {"order": order})
+
+
+@require_POST
+@login_required
+def update_cart_ajax(request):
+    data = json.loads(request.body)
+    food_id = data.get('food_id')
+    action = data.get('action')  # 'add', 'increment', 'decrement'
+
+    food = get_object_or_404(FoodItem, id=food_id)
+    cart, _ = Cart.objects.get_or_create(user=request.user)
+    cart_item, created = CartItem.objects.get_or_create(cart=cart, food=food)
+
+    if action in ('add', 'increment'):
+        if not created:
+            cart_item.quantity += 1
+        cart_item.save()
+
+    elif action == 'decrement':
+        cart_item.quantity -= 1
+        if cart_item.quantity <= 0:
+            cart_item.delete()
+            total = sum(CartItem.objects.filter(cart=cart).values_list('quantity', flat=True))
+            return JsonResponse({'status': 'removed', 'food_id': food_id, 'cart_count': total})
+        else:
+            cart_item.save()
+
+    total = sum(CartItem.objects.filter(cart=cart).values_list('quantity', flat=True))
+    return JsonResponse({'status': 'ok', 'food_id': food_id, 'quantity': cart_item.quantity, 'cart_count': total})
