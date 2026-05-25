@@ -41,12 +41,14 @@ def login_view(request):
     error = None
 
     if request.method == "POST":
-        email = request.POST.get("email", "").strip().lower()
+        username = request.POST.get("username", "").strip().lower()
         password = request.POST.get("password", "")
 
-        user = authenticate(request, username=email, password=password)
+        # FIXED: Use username instead of email for authentication
+        user = authenticate(request, username=username, password=password)
+        
         if user is None:
-            error = "Invalid email or password."
+            error = "Invalid username or password."
         else:
             login(request, user)
             return _redirect_after_login(user)
@@ -62,19 +64,20 @@ def register_view(request):
 
     if request.method == "POST":
         full_name = request.POST.get("full_name", "").strip()
+        username = request.POST.get("username", "").strip().lower()
         email = request.POST.get("email", "").strip().lower()
         phone = request.POST.get("phone", "").strip()
         password1 = request.POST.get("password1", "")
         password2 = request.POST.get("password2", "")
 
-        if not full_name or not email or not phone or not password1 or not password2:
+        if not full_name or not username or not email or not phone or not password1 or not password2:
             error = "Please fill all fields."
         elif password1 != password2:
             error = "Passwords do not match."
-        elif User.objects.filter(username=email).exists():
-            error = "An account with this email already exists."
+        elif User.objects.filter(username=username).exists():
+            error = "An account with this username already exists."
         else:
-            user = User.objects.create_user(username=email, email=email, password=password1)
+            user = User.objects.create_user(username=username, email=email, password=password1)
             user.first_name = full_name
             user.save()
 

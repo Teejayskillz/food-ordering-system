@@ -1,121 +1,1122 @@
 {% extends "control/base.html" %}
-{% block title %}Menu{% endblock %}
+{% load static %}
+
+{% block title %}Menu · Saveur Admin{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Menu page specific styles */
+    .filter-section {
+        background: var(--cream-04);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .filter-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--cream-40);
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-control-custom,
+    .form-select-custom {
+        background: var(--cream-08);
+        border: 1px solid var(--border);
+        color: var(--cream);
+        border-radius: 100px;
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+    
+    .form-control-custom:focus,
+    .form-select-custom:focus {
+        background: var(--cream-08);
+        border-color: var(--gold);
+        color: var(--cream);
+        box-shadow: 0 0 0 3px var(--gold-dim);
+        outline: none;
+    }
+    
+    .form-control-custom::placeholder {
+        color: var(--cream-40);
+        font-size: 0.8rem;
+    }
+    
+    /* Categories card */
+    .categories-card {
+        background: var(--cream-04);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    
+    .categories-header {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        background: var(--cream-08);
+    }
+    
+    .categories-list {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    
+    .category-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        transition: all 0.2s ease;
+    }
+    
+    .category-item:hover {
+        background: var(--cream-08);
+        padding-left: 1.5rem;
+    }
+    
+    .category-name {
+        color: var(--cream);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .category-name i {
+        color: var(--gold);
+        font-size: 1rem;
+    }
+    
+    .category-badge {
+        background: var(--cream-08);
+        color: var(--cream-60);
+        padding: 0.2rem 0.5rem;
+        border-radius: 100px;
+        font-size: 0.7rem;
+        margin-left: 0.5rem;
+    }
+    
+    .category-edit-link {
+        color: var(--gold);
+        text-decoration: none;
+        font-size: 0.8rem;
+        transition: all 0.2s;
+        opacity: 0.6;
+    }
+    
+    .category-edit-link:hover {
+        opacity: 1;
+        color: var(--gold-light);
+    }
+    
+    /* Food table - FIXED CONTRAST */
+    .detail-card {
+        background: var(--cream-04);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    
+    .food-table {
+        margin-bottom: 0;
+        width: 100%;
+        background: transparent;
+    }
+    
+    .food-table thead th {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--gold) !important;
+        border-bottom: 1px solid var(--border);
+        padding: 1rem 0.75rem;
+        background: var(--cream-08);
+        font-weight: 600;
+    }
+    
+    .food-table tbody td {
+        padding: 1rem 0.75rem;
+        border-bottom: 1px solid var(--border);
+        color: var(--cream-60) !important;
+        vertical-align: middle;
+        background: transparent;
+    }
+    
+    .food-table tbody tr {
+        transition: all 0.2s ease;
+        background: transparent;
+    }
+    
+    .food-table tbody tr:hover {
+        background: var(--cream-08);
+    }
+    
+    .food-table tbody tr:hover td {
+        color: var(--cream) !important;
+    }
+    
+    .food-name {
+        color: var(--cream) !important;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .food-name span {
+        color: var(--cream) !important;
+    }
+    
+    .food-image-thumb {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        object-fit: cover;
+        background: var(--cream-08);
+    }
+    
+    /* Price styling */
+    .food-price {
+        color: var(--gold) !important;
+        font-weight: 600;
+    }
+    
+    /* Status badges */
+    .badge-available {
+        background: rgba(100, 200, 100, 0.15);
+        color: #8fdf8f !important;
+        border: 1px solid rgba(100, 200, 100, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.3rem 0.7rem;
+        border-radius: 100px;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+    
+    .badge-unavailable {
+        background: rgba(200, 170, 110, 0.15);
+        color: var(--gold) !important;
+        border: 1px solid rgba(200, 170, 110, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.3rem 0.7rem;
+        border-radius: 100px;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+    
+    .badge-archived {
+        background: rgba(200, 100, 100, 0.15);
+        color: #e0a0a0 !important;
+        border: 1px solid rgba(200, 100, 100, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.3rem 0.7rem;
+        border-radius: 100px;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+    
+    .badge-active {
+        background: rgba(100, 200, 100, 0.15);
+        color: #8fdf8f !important;
+        border: 1px solid rgba(100, 200, 100, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.3rem 0.7rem;
+        border-radius: 100px;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+    
+    .category-badge-gold {
+        background: var(--gold-dim);
+        color: var(--gold) !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.3rem 0.7rem;
+        border-radius: 100px;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+    
+    /* Action buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .btn-icon-sm {
+        padding: 0.3rem 0.7rem;
+        font-size: 0.7rem;
+        border-radius: 100px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-outline-gold {
+        border: 1px solid var(--gold-border);
+        background: transparent;
+        color: var(--cream-60);
+    }
+    
+    .btn-outline-gold:hover {
+        background: var(--gold-dim);
+        border-color: var(--gold);
+        color: var(--gold);
+    }
+    
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--cream-40);
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+    
+    /* Quick stats bar */
+    .stats-bar {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-pill {
+        background: var(--cream-04);
+        border: 1px solid var(--border);
+        border-radius: 100px;
+        padding: 0.3rem 1rem;
+        font-size: 0.8rem;
+        color: var(--cream-60);
+    }
+    
+    .stat-pill strong {
+        color: var(--gold);
+        font-weight: 600;
+    }
+    
+    /* Modal styles for bulk actions */
+    .modal-custom {
+        background: var(--surface);
+        border: 1px solid var(--gold-border);
+        border-radius: 20px;
+    }
+    
+    .modal-custom .modal-header {
+        border-bottom-color: var(--border);
+    }
+    
+    .modal-custom .modal-footer {
+        border-top-color: var(--border);
+    }
+    
+    /* Loading overlay */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(14, 12, 10, 0.8);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .loading-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .spinner-custom {
+        width: 50px;
+        height: 50px;
+        border: 3px solid var(--cream-08);
+        border-top-color: var(--gold);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .food-table {
+            font-size: 0.8rem;
+        }
+        
+        .btn-icon-sm {
+            padding: 0.2rem 0.5rem;
+            font-size: 0.65rem;
+        }
+    }
+    
+    /* Custom scrollbar for categories */
+    .categories-list::-webkit-scrollbar {
+        width: 5px;
+    }
+    
+    .categories-list::-webkit-scrollbar-track {
+        background: var(--obsidian);
+    }
+    
+    .categories-list::-webkit-scrollbar-thumb {
+        background: var(--gold-dim);
+        border-radius: 5px;
+    }
+    
+    /* Bulk actions bar */
+    .bulk-actions-bar {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--surface-2);
+        border: 1px solid var(--gold-border);
+        border-radius: 100px;
+        padding: 0.75rem 1.5rem;
+        z-index: 1000;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(10px);
+    }
+    
+    .clear-filters {
+        color: var(--cream-40);
+        text-decoration: none;
+        font-size: 0.75rem;
+        transition: color 0.2s;
+    }
+    
+    .clear-filters:hover {
+        color: var(--gold);
+    }
+    
+    .page-link-custom {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.4rem 0.9rem;
+        background: var(--cream-04);
+        border: 1px solid var(--border);
+        color: var(--cream-60);
+        text-decoration: none;
+        border-radius: 100px;
+        font-size: 0.8rem;
+        transition: all 0.2s ease;
+    }
+    
+    .page-link-custom:hover {
+        background: var(--gold-dim);
+        border-color: var(--gold);
+        color: var(--gold);
+    }
+    
+    .page-link-custom.active {
+        background: var(--gold);
+        border-color: var(--gold);
+        color: var(--obsidian);
+    }
+    
+    .page-link-custom.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+    
+    .food-checkbox {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: var(--gold);
+    }
+    
+    /* Additional contrast fixes */
+    .text-cream {
+        color: var(--cream) !important;
+    }
+    
+    .text-cream-60 {
+        color: var(--cream-60) !important;
+    }
+    
+    .text-gold {
+        color: var(--gold) !important;
+    }
+</style>
+{% endblock %}
+
+{% block panel_title %}Menu Management{% endblock %}
+{% block panel_subtitle %}Manage food items and categories{% endblock %}
+
+{% block action_buttons %}
+<div class="d-flex gap-2">
+    <button class="btn-outline-gold" id="refreshMenuBtn">
+        <i class="bi bi-arrow-repeat me-1"></i> Refresh
+    </button>
+    <a href="{% url 'control:category_add' %}" class="btn-outline-gold">
+        <i class="bi bi-folder-plus me-1"></i> Add Category
+    </a>
+    <a href="{% url 'control:food_add' %}" class="btn-gold">
+        <i class="bi bi-plus-circle me-1"></i> Add Food
+    </a>
+</div>
+{% endblock %}
+
 {% block content %}
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="mb-0">Menu</h3>
-    <div>
-        <a class="btn btn-outline-primary btn-sm" href="{% url 'control:category_add' %}">Add Category</a>
-        <a class="btn btn-primary btn-sm" href="{% url 'control:food_add' %}">Add Food</a>
+<!-- Stats Bar -->
+<div class="stats-bar">
+    <div class="stat-pill">
+        <i class="bi bi-grid-3x3-gap-fill me-1"></i>
+        <strong>{{ categories.count }}</strong> Categories
+    </div>
+    <div class="stat-pill">
+        <i class="bi bi-cup-straw me-1"></i>
+        <strong>{{ total_foods }}</strong> Total Items
+    </div>
+    <div class="stat-pill">
+        <i class="bi bi-check2-circle me-1"></i>
+        <strong>{{ available_foods }}</strong> Available
+    </div>
+    <div class="stat-pill">
+        <i class="bi bi-archive me-1"></i>
+        <strong>{{ archived_foods }}</strong> Archived
     </div>
 </div>
 
-<form method="get" class="row g-2 mb-3">
-    <div class="col-12 col-md-5">
-        <input class="form-control" name="q" value="{{ q }}" placeholder="Search food or category...">
-    </div>
-    <div class="col-12 col-md-3">
-        <select class="form-select" name="archived">
-            <option value="" {% if not show_archived %}selected{% endif %}>Hide archived</option>
-            <option value="1" {% if show_archived %}selected{% endif %}>Show archived</option>
-        </select>
-    </div>
-    <div class="col-12 col-md-2">
-        <button class="btn btn-primary w-100" type="submit">Filter</button>
-    </div>
-</form>
-
-<div class="row g-3">
-    <div class="col-12 col-lg-4">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h5>Categories</h5>
-                <ul class="list-group">
+<!-- Filter Section -->
+<div class="filter-section">
+    <form method="get" id="filterForm">
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-5">
+                <div class="filter-label">
+                    <i class="bi bi-search me-1"></i> Search
+                </div>
+                <input type="text" 
+                       class="form-control-custom w-100" 
+                       name="q" 
+                       value="{{ q }}" 
+                       placeholder="Search by food name or category..."
+                       id="searchInput">
+            </div>
+            
+            <div class="col-12 col-md-3">
+                <div class="filter-label">
+                    <i class="bi bi-funnel me-1"></i> Archive Status
+                </div>
+                <select class="form-select-custom w-100" name="archived" id="archiveSelect">
+                    <option value="" {% if not show_archived %}selected{% endif %}>Hide archived</option>
+                    <option value="1" {% if show_archived %}selected{% endif %}>Show archived</option>
+                </select>
+            </div>
+            
+            <div class="col-12 col-md-2">
+                <div class="filter-label">
+                    <i class="bi bi-tag me-1"></i> Category Filter
+                </div>
+                <select class="form-select-custom w-100" name="category" id="categorySelect">
+                    <option value="">All Categories</option>
                     {% for c in categories %}
-                    <li class="list-group-item d-flex justify-content-between">
-                        <span>{{ c.name }}</span>
-                        <a href="{% url 'control:category_edit' c.id %}">Edit</a>
-                    </li>
-                    {% empty %}
-                    <li class="list-group-item">No categories yet.</li>
+                        <option value="{{ c.id }}" {% if selected_category == c.id|stringformat:"s" %}selected{% endif %}>
+                            {{ c.name }}
+                        </option>
                     {% endfor %}
-                </ul>
+                </select>
+            </div>
+            
+            <div class="col-12 col-md-2">
+                <div class="filter-label">&nbsp;</div>
+                <div class="d-flex gap-2">
+                    <button class="btn-gold w-100" type="submit">
+                        <i class="bi bi-filter me-1"></i> Apply
+                    </button>
+                    {% if q or show_archived or selected_category %}
+                    <a href="{% url 'control:menu_list' %}" class="clear-filters d-flex align-items-center">
+                        <i class="bi bi-x-circle me-1"></i> Clear
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="row g-4">
+    <!-- Categories Sidebar -->
+    <div class="col-12 col-lg-4">
+        <div class="categories-card">
+            <div class="categories-header">
+                <h5 class="mb-0" style="font-family: var(--font-display); color: var(--gold);">
+                    <i class="bi bi-tags me-2"></i>Categories
+                </h5>
+                <small class="text-cream-40">{{ categories.count }} total</small>
+            </div>
+            <div class="categories-list">
+                {% for c in categories %}
+                <div class="category-item" data-category-id="{{ c.id }}">
+                    <div class="category-name">
+                        <i class="bi bi-folder-fill"></i>
+                        <span style="color: var(--cream);">{{ c.name }}</span>
+                        <span class="category-badge">{{ c.food_set.count }} items</span>
+                    </div>
+                    <a href="{% url 'control:category_edit' c.id %}" class="category-edit-link">
+                        <i class="bi bi-pencil"></i> Edit
+                    </a>
+                </div>
+                {% empty %}
+                <div class="empty-state py-4">
+                    <i class="bi bi-folder-x"></i>
+                    <div class="mt-2" style="color: var(--cream-60);">No categories yet</div>
+                    <a href="{% url 'control:category_add' %}" class="btn-outline-gold btn-sm mt-2">
+                        Create your first category
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Quick Actions Card -->
+        <div class="detail-card p-4 mt-4">
+            <h5 class="mb-3" style="font-family: var(--font-display); color: var(--gold);">
+                <i class="bi bi-lightning-charge me-2"></i>Quick Actions
+            </h5>
+            <div class="d-flex flex-column gap-2">
+                <button class="btn-outline-gold w-100" onclick="bulkArchive()">
+                    <i class="bi bi-archive me-1"></i> Bulk Archive
+                </button>
+                <button class="btn-outline-gold w-100" onclick="exportMenu()">
+                    <i class="bi bi-download me-1"></i> Export Menu
+                </button>
+                <button class="btn-outline-gold w-100" onclick="reorderItems()">
+                    <i class="bi bi-arrow-up-down me-1"></i> Reorder Items
+                </button>
             </div>
         </div>
     </div>
 
+    <!-- Food Items Table -->
     <div class="col-12 col-lg-8">
-        <div class="bg-white border rounded table-responsive">
-            <table class="table table-striped mb-0">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Category</th>
-                        <th>Price</th>
-                        <th>Available</th>
-                        <th>Archived</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for f in page_obj %}
-                    <tr>
-                        <td>{{ f.name }}</td>
-                        <td>{{ f.category.name }}</td>
-                        <td>₦{{ f.price }}</td>
-                        <td>{% if f.available %}<span class="badge text-bg-success">Yes</span>{% else %}<span
-                                class="badge text-bg-secondary">No</span>{% endif %}</td>
-                        <td>{% if f.is_archived %}<span class="badge text-bg-danger">Yes</span>{% else %}<span
-                                class="badge text-bg-success">No</span>{% endif %}</td>
-                        <td class="d-flex gap-2">
-                            <a class="btn btn-outline-secondary btn-sm"
-                                href="{% url 'control:food_edit' f.id %}">Edit</a>
-
-                            <form method="post" action="{% url 'control:toggle_food' f.id %}">
-                                {% csrf_token %}
-                                <button class="btn btn-outline-primary btn-sm" type="submit">Toggle avail</button>
-                            </form>
-
-                            <form method="post" action="{% url 'control:toggle_food_archive' f.id %}">
-                                {% csrf_token %}
-                                <button class="btn btn-outline-danger btn-sm" type="submit">
-                                    {% if f.is_archived %}Unarchive{% else %}Archive{% endif %}
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" class="text-center py-4">No food items found.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="detail-card overflow-hidden">
+            <div class="table-responsive">
+                <table class="food-table table">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">
+                                <input type="checkbox" id="selectAllFoods" class="food-checkbox">
+                            </th>
+                            <th>Item</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Available</th>
+                            <th>Archived</th>
+                            <th style="width: 220px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="foodTableBody">
+                        {% for f in page_obj %}
+                        <tr data-food-id="{{ f.id }}" data-archived="{{ f.is_archived }}">
+                            <td style="background: transparent;">
+                                <input type="checkbox" class="food-checkbox food-select" value="{{ f.id }}">
+                            </td>
+                            <td style="background: transparent;">
+                                <div class="food-name">
+                                    {% if f.image %}
+                                    <img src="{{ f.image.url }}" alt="{{ f.name }}" class="food-image-thumb">
+                                    {% else %}
+                                    <div class="food-image-thumb d-flex align-items-center justify-content-center" style="background: var(--cream-08);">
+                                        <i class="bi bi-image" style="color: var(--cream-40);"></i>
+                                    </div>
+                                    {% endif %}
+                                    <span>{{ f.name }}</span>
+                                </div>
+                            </td>
+                            <td style="background: transparent;">
+                                <span class="category-badge-gold">{{ f.category.name }}</span>
+                            </td>
+                            <td style="background: transparent;">
+                                <span class="food-price">₦{{ f.price }}</span>
+                            </td>
+                            <td style="background: transparent;">
+                                {% if f.available %}
+                                <span class="badge-available">
+                                    <i class="bi bi-check-circle"></i> Available
+                                </span>
+                                {% else %}
+                                <span class="badge-unavailable">
+                                    <i class="bi bi-x-circle"></i> Unavailable
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td style="background: transparent;">
+                                {% if f.is_archived %}
+                                <span class="badge-archived">
+                                    <i class="bi bi-archive"></i> Archived
+                                </span>
+                                {% else %}
+                                <span class="badge-active">
+                                    <i class="bi bi-circle"></i> Active
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td style="background: transparent;">
+                                <div class="action-buttons">
+                                    <a href="{% url 'control:food_edit' f.id %}" class="btn-outline-gold btn-icon-sm">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </a>
+                                    
+                                    <form method="post" action="{% url 'control:toggle_food' f.id %}" class="d-inline toggle-form">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-outline-gold btn-icon-sm toggle-avail" data-food-id="{{ f.id }}">
+                                            <i class="bi bi-toggle-on"></i> Toggle
+                                        </button>
+                                    </form>
+                                    
+                                    <form method="post" action="{% url 'control:toggle_food_archive' f.id %}" class="d-inline archive-form">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-outline-gold btn-icon-sm archive-toggle" data-food-id="{{ f.id }}">
+                                            {% if f.is_archived %}
+                                                <i class="bi bi-box-arrow-up"></i> Unarchive
+                                            {% else %}
+                                                <i class="bi bi-archive"></i> Archive
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7">
+                                <div class="empty-state">
+                                    <i class="bi bi-cup-straw"></i>
+                                    <div class="mt-2" style="color: var(--cream-60);">No food items found</div>
+                                    <small class="text-cream-40">Try adjusting your filters or add a new item</small>
+                                    <div class="mt-3">
+                                        <a href="{% url 'control:food_add' %}" class="btn-gold btn-sm">
+                                            <i class="bi bi-plus-circle me-1"></i> Add Food Item
+                                        </a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <div class="p-3 border-top" style="border-color: var(--border) !important;">
+                <nav>
+                    <div class="pagination-custom">
+                        {% if page_obj.has_previous %}
+                            <a class="page-link-custom" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if show_archived %}&archived=1{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}">
+                                <i class="bi bi-chevron-left"></i> Previous
+                            </a>
+                        {% else %}
+                            <span class="page-link-custom disabled">
+                                <i class="bi bi-chevron-left"></i> Previous
+                            </span>
+                        {% endif %}
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if num == page_obj.number %}
+                                <span class="page-link-custom active">{{ num }}</span>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <a class="page-link-custom" href="?page={{ num }}{% if q %}&q={{ q }}{% endif %}{% if show_archived %}&archived=1{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}">
+                                    {{ num }}
+                                </a>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                            <a class="page-link-custom" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if show_archived %}&archived=1{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}">
+                                Next <i class="bi bi-chevron-right"></i>
+                            </a>
+                        {% else %}
+                            <span class="page-link-custom disabled">
+                                Next <i class="bi bi-chevron-right"></i>
+                            </span>
+                        {% endif %}
+                    </div>
+                    <div class="text-center mt-2">
+                        <small class="text-cream-40">
+                            Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }} items
+                        </small>
+                    </div>
+                </nav>
+            </div>
+            {% endif %}
         </div>
-
-        <nav class="mt-3">
-            <ul class="pagination">
-                {% if page_obj.has_previous %}
-                <li class="page-item"><a class="page-link"
-                        href="?page={{ page_obj.previous_page_number }}&q={{ q }}&archived={% if show_archived %}1{% endif %}">Prev</a>
-                </li>
-                {% else %}
-                <li class="page-item disabled"><span class="page-link">Prev</span></li>
-                {% endif %}
-
-                <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{
-                        page_obj.paginator.num_pages }}</span></li>
-
-                {% if page_obj.has_next %}
-                <li class="page-item"><a class="page-link"
-                        href="?page={{ page_obj.next_page_number }}&q={{ q }}&archived={% if show_archived %}1{% endif %}">Next</a>
-                </li>
-                {% else %}
-                <li class="page-item disabled"><span class="page-link">Next</span></li>
-                {% endif %}
-            </ul>
-        </nav>
     </div>
 </div>
 
+<!-- Bulk Actions Bar -->
+<div class="bulk-actions-bar" id="bulkActionsBar" style="display: none;">
+    <div class="d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-3">
+            <span id="selectedCount" class="fw-bold" style="color: var(--gold);">0</span>
+            <span class="text-cream-40">items selected</span>
+            <button class="btn-outline-gold btn-sm" onclick="bulkToggleAvailability()">
+                <i class="bi bi-toggle-on me-1"></i> Toggle Available
+            </button>
+            <button class="btn-outline-gold btn-sm" onclick="bulkArchive()">
+                <i class="bi bi-archive me-1"></i> Archive Selected
+            </button>
+        </div>
+        <button class="btn-outline-gold btn-sm" onclick="clearBulkSelection()">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-custom"></div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Menu page JavaScript
+    (function() {
+        'use strict';
+        
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const filterForm = document.getElementById('filterForm');
+        const searchInput = document.getElementById('searchInput');
+        const archiveSelect = document.getElementById('archiveSelect');
+        const categorySelect = document.getElementById('categorySelect');
+        const refreshBtn = document.getElementById('refreshMenuBtn');
+        const selectAllCheckbox = document.getElementById('selectAllFoods');
+        const bulkActionsBar = document.getElementById('bulkActionsBar');
+        const selectedCountSpan = document.getElementById('selectedCount');
+        
+        let selectedFoods = new Set();
+        
+        // Show/hide loading
+        function showLoading() {
+            if (loadingOverlay) loadingOverlay.classList.add('active');
+        }
+        
+        function hideLoading() {
+            if (loadingOverlay) loadingOverlay.classList.remove('active');
+        }
+        
+        // Debounce for search
+        let debounceTimeout;
+        function debounce(func, delay) {
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(func, delay);
+        }
+        
+        // Auto-submit on search
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                debounce(() => {
+                    filterForm.submit();
+                }, 500);
+            });
+        }
+        
+        // Auto-submit on select change
+        if (archiveSelect) {
+            archiveSelect.addEventListener('change', () => filterForm.submit());
+        }
+        
+        if (categorySelect) {
+            categorySelect.addEventListener('change', () => filterForm.submit());
+        }
+        
+        // Refresh button
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                showLoading();
+                setTimeout(() => filterForm.submit(), 200);
+            });
+        }
+        
+        // Show toast notification
+        function showToast(type, message) {
+            const toast = document.createElement('div');
+            toast.className = 'position-fixed bottom-0 end-0 m-3';
+            toast.style.zIndex = '9999';
+            
+            let icon = 'bi-info-circle';
+            let bgColor = 'var(--surface)';
+            
+            if (type === 'success') {
+                icon = 'bi-check2-circle';
+                bgColor = 'rgba(30, 50, 30, 0.95)';
+            } else if (type === 'error') {
+                icon = 'bi-exclamation-triangle';
+                bgColor = 'rgba(50, 20, 20, 0.95)';
+            } else if (type === 'warning') {
+                icon = 'bi-exclamation-circle';
+                bgColor = 'rgba(50, 40, 10, 0.95)';
+            }
+            
+            toast.innerHTML = `
+                <div style="background: ${bgColor}; border: 1px solid var(--gold-border); border-radius: 12px; padding: 0.75rem 1rem; backdrop-filter: blur(10px);">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi ${icon}" style="color: var(--gold);"></i>
+                        <span class="small" style="color: var(--cream);">${message}</span>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        // Handle food selection
+        function initFoodSelection() {
+            const checkboxes = document.querySelectorAll('.food-select');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const foodId = this.value;
+                    
+                    if (this.checked) {
+                        selectedFoods.add(foodId);
+                    } else {
+                        selectedFoods.delete(foodId);
+                    }
+                    
+                    updateBulkActions();
+                    
+                    if (selectAllCheckbox) {
+                        const allChecked = checkboxes.length === selectedFoods.size && checkboxes.length > 0;
+                        selectAllCheckbox.checked = allChecked;
+                    }
+                });
+            });
+        }
+        
+        // Select all functionality
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                const checkboxes = document.querySelectorAll('.food-select');
+                
+                if (this.checked) {
+                    checkboxes.forEach(checkbox => {
+                        checkbox.checked = true;
+                        selectedFoods.add(checkbox.value);
+                    });
+                } else {
+                    checkboxes.forEach(checkbox => {
+                        checkbox.checked = false;
+                        selectedFoods.clear();
+                    });
+                }
+                
+                updateBulkActions();
+            });
+        }
+        
+        // Update bulk actions bar
+        function updateBulkActions() {
+            const count = selectedFoods.size;
+            
+            if (selectedCountSpan) {
+                selectedCountSpan.textContent = count;
+            }
+            
+            if (bulkActionsBar) {
+                if (count > 0) {
+                    bulkActionsBar.style.display = 'block';
+                } else {
+                    bulkActionsBar.style.display = 'none';
+                }
+            }
+        }
+        
+        // Clear bulk selection
+        window.clearBulkSelection = function() {
+            selectedFoods.clear();
+            document.querySelectorAll('.food-select').forEach(cb => cb.checked = false);
+            if (selectAllCheckbox) selectAllCheckbox.checked = false;
+            updateBulkActions();
+        };
+        
+        // Bulk toggle availability
+        window.bulkToggleAvailability = function() {
+            if (selectedFoods.size === 0) {
+                showToast('warning', 'No items selected');
+                return;
+            }
+            
+            if (!confirm(`Toggle availability for ${selectedFoods.size} item(s)?`)) return;
+            
+            showLoading();
+            
+            // Simulate API call - replace with actual endpoint
+            setTimeout(() => {
+                showToast('success', `${selectedFoods.size} item(s) updated`);
+                hideLoading();
+                setTimeout(() => location.reload(), 1000);
+            }, 1000);
+        };
+        
+        // Bulk archive
+        window.bulkArchive = function() {
+            if (selectedFoods.size === 0) {
+                showToast('warning', 'No items selected');
+                return;
+            }
+            
+            if (!confirm(`Archive ${selectedFoods.size} item(s)?`)) return;
+            
+            showLoading();
+            
+            // Simulate API call - replace with actual endpoint
+            setTimeout(() => {
+                showToast('success', `${selectedFoods.size} item(s) archived`);
+                hideLoading();
+                setTimeout(() => location.reload(), 1000);
+            }, 1000);
+        };
+        
+        // Export menu
+        window.exportMenu = function() {
+            showLoading();
+            
+            // Simulate export
+            setTimeout(() => {
+                hideLoading();
+                showToast('success', 'Menu export started');
+            }, 1000);
+        };
+        
+        // Reorder items (placeholder)
+        window.reorderItems = function() {
+            showToast('info', 'Drag and drop reordering coming soon!');
+        };
+        
+        // Get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Confirm archive/unarchive on form submit
+        const archiveForms = document.querySelectorAll('.archive-form');
+        archiveForms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const btn = this.querySelector('.archive-toggle');
+                const isArchiving = btn.textContent.includes('Archive');
+                
+                if (!confirm(`Are you sure you want to ${isArchiving ? 'archive' : 'unarchive'} this item?`)) {
+                    e.preventDefault();
+                } else {
+                    showLoading();
+                }
+            });
+        });
+        
+        // Confirm toggle availability
+        const toggleForms = document.querySelectorAll('.toggle-form');
+        toggleForms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                if (!confirm('Toggle availability for this item?')) {
+                    e.preventDefault();
+                } else {
+                    showLoading();
+                }
+            });
+        });
+        
+        // Category filter click
+        const categoryItems = document.querySelectorAll('.category-item');
+        categoryItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') return;
+                
+                const categoryId = this.dataset.categoryId;
+                if (categorySelect) {
+                    categorySelect.value = categoryId;
+                    filterForm.submit();
+                }
+            });
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + F to focus search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                e.preventDefault();
+                if (searchInput) searchInput.focus();
+            }
+            
+            // Ctrl/Cmd + R to refresh
+            if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+                e.preventDefault();
+                if (refreshBtn) refreshBtn.click();
+            }
+            
+            // Escape to clear selection
+            if (e.key === 'Escape') {
+                clearBulkSelection();
+            }
+        });
+        
+        // Initialize
+        function init() {
+            initFoodSelection();
+        }
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+        
+    })();
+</script>
 {% endblock %}

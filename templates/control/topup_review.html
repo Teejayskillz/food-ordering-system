@@ -1,32 +1,803 @@
-<h1>Review Top-up #{{ topup.id }}</h1>
+{% extends "control/base.html" %}
+{% load static %}
 
-<p><b>User:</b> {{ topup.user }}</p>
-<p><b>Amount:</b> ₦{{ topup.amount }}</p>
-<p><b>Status:</b> {{ topup.status }}</p>
-<p><b>Reference:</b> {{ topup.reference }}</p>
+{% block title %}Review Top-up #{{ topup.id }} · Saveur Admin{% endblock %}
 
-<p><b>Proof:</b></p>
-{% if topup.proof %}
-<img src="{{ topup.proof.url }}" style="max-width:420px; border:1px solid #ddd;" />
-{% else %}
-<p>No proof uploaded.</p>
-{% endif %}
+{% block extra_head %}
+<style>
+    /* Review page specific styles */
+    .detail-card {
+        background: var(--cream-04);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        transition: all 0.2s ease;
+        overflow: hidden;
+    }
+    
+    .detail-card:hover {
+        border-color: var(--gold-border);
+    }
+    
+    .info-row {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--cream-40);
+        margin-bottom: 0.25rem;
+    }
+    
+    .info-value {
+        font-size: 0.95rem;
+        color: var(--cream);
+        font-weight: 500;
+    }
+    
+    .info-value-large {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--gold);
+    }
+    
+    /* Status badges */
+    .status-badge-large {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 100px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    
+    .status-pending {
+        background: rgba(200, 170, 110, 0.15);
+        color: var(--gold);
+        border: 1px solid rgba(200, 170, 110, 0.3);
+    }
+    
+    .status-approved {
+        background: rgba(100, 200, 100, 0.15);
+        color: #8fdf8f;
+        border: 1px solid rgba(100, 200, 100, 0.3);
+    }
+    
+    .status-rejected {
+        background: rgba(200, 100, 100, 0.15);
+        color: #e0a0a0;
+        border: 1px solid rgba(200, 100, 100, 0.3);
+    }
+    
+    /* Proof image */
+    .proof-container {
+        background: var(--cream-08);
+        border-radius: 16px;
+        padding: 1rem;
+        text-align: center;
+    }
+    
+    .proof-image {
+        max-width: 100%;
+        max-height: 400px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: transform 0.2s ease, opacity 0.2s ease;
+        border: 1px solid var(--border);
+    }
+    
+    .proof-image:hover {
+        transform: scale(1.02);
+        opacity: 0.95;
+    }
+    
+    /* Form elements */
+    .form-label-custom {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--gold);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    
+    .form-control-custom {
+        background: var(--cream-08);
+        border: 1px solid var(--border);
+        color: var(--cream);
+        border-radius: 16px;
+        padding: 0.75rem 1rem;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+        width: 100%;
+    }
+    
+    .form-control-custom:focus {
+        background: var(--cream-08);
+        border-color: var(--gold);
+        color: var(--cream);
+        box-shadow: 0 0 0 3px var(--gold-dim);
+        outline: none;
+    }
+    
+    .form-control-custom::placeholder {
+        color: var(--cream-40);
+        font-size: 0.8rem;
+    }
+    
+    /* Action buttons */
+    .action-buttons-review {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .btn-approve {
+        background: linear-gradient(135deg, rgba(100, 200, 100, 0.2), rgba(100, 200, 100, 0.1));
+        border: 2px solid #8fdf8f;
+        color: #8fdf8f;
+        border-radius: 100px;
+        padding: 0.6rem 1.5rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-approve:hover {
+        background: rgba(100, 200, 100, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(100, 200, 100, 0.2);
+    }
+    
+    .btn-reject {
+        background: linear-gradient(135deg, rgba(200, 100, 100, 0.2), rgba(200, 100, 100, 0.1));
+        border: 2px solid #e0a0a0;
+        color: #e0a0a0;
+        border-radius: 100px;
+        padding: 0.6rem 1.5rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-reject:hover {
+        background: rgba(200, 100, 100, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(200, 100, 100, 0.2);
+    }
+    
+    /* Info grid */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    /* Alert overrides */
+    .alert-info {
+        background: rgba(20, 35, 55, 0.6) !important;
+        border-color: rgba(80, 130, 200, 0.25) !important;
+        color: #aad0f0 !important;
+        border-radius: 16px;
+    }
+    
+    .alert-secondary {
+        background: var(--cream-08) !important;
+        border-color: var(--border) !important;
+        color: var(--cream-60) !important;
+        border-radius: 12px;
+    }
+    
+    /* Modal for full image */
+    .image-modal {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.95);
+        cursor: pointer;
+    }
+    
+    .image-modal.active {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal-image {
+        max-width: 90%;
+        max-height: 90%;
+        object-fit: contain;
+        border-radius: 8px;
+    }
+    
+    .close-modal {
+        position: absolute;
+        top: 20px;
+        right: 40px;
+        color: var(--cream);
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+    
+    .close-modal:hover {
+        color: var(--gold);
+    }
+    
+    /* Loading overlay */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(14, 12, 10, 0.8);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9998;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .loading-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .spinner-custom {
+        width: 50px;
+        height: 50px;
+        border: 3px solid var(--cream-08);
+        border-top-color: var(--gold);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Reviewed info card */
+    .reviewed-info {
+        background: var(--cream-08);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .action-buttons-review {
+            flex-direction: column;
+        }
+        
+        .btn-approve, .btn-reject {
+            justify-content: center;
+        }
+        
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    /* Copy button */
+    .copy-reference {
+        background: transparent;
+        border: none;
+        color: var(--cream-40);
+        cursor: pointer;
+        transition: color 0.2s;
+        padding: 0;
+        margin-left: 0.5rem;
+    }
+    
+    .copy-reference:hover {
+        color: var(--gold);
+    }
+    
+    /* Divider */
+    .divider {
+        border-top: 1px solid var(--border);
+        margin: 1rem 0;
+    }
+</style>
+{% endblock %}
 
-<hr>
+{% block panel_title %}Review Top-up #{{ topup.id }}{% endblock %}
+{% block panel_subtitle %}Reference: {{ topup.reference }}{% endblock %}
 
-{% if topup.status == "pending" %}
-<form method="post">
-    {% csrf_token %}
-    <p>
-        <textarea name="admin_note" rows="3" cols="60" placeholder="Admin note..."></textarea>
-    </p>
+{% block action_buttons %}
+<div class="d-flex gap-2">
+    <button class="btn-outline-gold" onclick="copyReference()">
+        <i class="bi bi-files me-1"></i> Copy Reference
+    </button>
+    <a href="{% url 'control:topups_list' %}" class="btn-outline-gold">
+        <i class="bi bi-arrow-left me-1"></i> Back to Top-ups
+    </a>
+</div>
+{% endblock %}
 
-    <button type="submit" name="action" value="approve">Approve</button>
-    <button type="submit" name="action" value="reject">Reject</button>
-</form>
-{% else %}
-<p><b>Reviewed by:</b> {{ topup.reviewed_by }} at {{ topup.reviewed_at }}</p>
-<p><b>Admin note:</b> {{ topup.admin_note }}</p>
-{% endif %}
+{% block content %}
 
-<p><a href="{% url 'control:topups_list' %}">← Back to top-ups</a></p>
+<div class="row g-4">
+    <!-- Left Column - Top-up Details -->
+    <div class="col-12 col-lg-6">
+        <div class="detail-card p-4">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <h5 class="mb-0" style="font-family: var(--font-display); color: var(--gold);">
+                    <i class="bi bi-wallet2 me-2"></i>Top-up Details
+                </h5>
+                
+                {% if topup.status == "pending" %}
+                <span class="status-badge-large status-pending">
+                    <i class="bi bi-clock"></i> Pending
+                </span>
+                {% elif topup.status == "approved" %}
+                <span class="status-badge-large status-approved">
+                    <i class="bi bi-check2-circle"></i> Approved
+                </span>
+                {% elif topup.status == "rejected" %}
+                <span class="status-badge-large status-rejected">
+                    <i class="bi bi-x-circle"></i> Rejected
+                </span>
+                {% else %}
+                <span class="status-badge-large">{{ topup.status }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="info-grid">
+                <div>
+                    <div class="info-label">
+                        <i class="bi bi-person me-1"></i> User
+                    </div>
+                    <div class="info-value">{{ topup.user.get_full_name|default:topup.user.username }}</div>
+                    <div class="small text-cream-40">{{ topup.user.email }}</div>
+                </div>
+                
+                <div>
+                    <div class="info-label">
+                        <i class="bi bi-cash-stack me-1"></i> Amount
+                    </div>
+                    <div class="info-value-large">₦{{ topup.amount|floatformat:0 }}</div>
+                </div>
+                
+                <div class="col-12">
+                    <div class="info-label">
+                        <i class="bi bi-upc-scan me-1"></i> Reference
+                    </div>
+                    <div class="info-value">
+                        <code style="background: var(--cream-08); padding: 0.3rem 0.6rem; border-radius: 8px;">{{ topup.reference }}</code>
+                        <button class="copy-reference" onclick="copyReference()" title="Copy reference">
+                            <i class="bi bi-files"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="info-label">
+                        <i class="bi bi-calendar3 me-1"></i> Requested
+                    </div>
+                    <div class="info-value">{{ topup.created_at|date:"F j, Y \a\t g:i A" }}</div>
+                </div>
+            </div>
+            
+            {% if topup.status != "pending" %}
+            <div class="divider"></div>
+            
+            <div>
+                <div class="info-label">
+                    <i class="bi bi-person-check me-1"></i> Reviewed By
+                </div>
+                <div class="info-value">{{ topup.reviewed_by|default:"—" }}</div>
+                
+                <div class="info-label mt-3">
+                    <i class="bi bi-clock-history me-1"></i> Reviewed At
+                </div>
+                <div class="info-value">{{ topup.reviewed_at|date:"F j, Y \a\t g:i A"|default:"—" }}</div>
+                
+                <div class="info-label mt-3">
+                    <i class="bi bi-chat-text me-1"></i> Admin Note
+                </div>
+                <div class="reviewed-info">
+                    {% if topup.admin_note %}
+                    {{ topup.admin_note }}
+                    {% else %}
+                    <span class="text-cream-40">No note provided</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Right Column - Proof -->
+    <div class="col-12 col-lg-6">
+        <div class="detail-card p-4">
+            <h5 class="mb-3" style="font-family: var(--font-display); color: var(--gold);">
+                <i class="bi bi-image me-2"></i>Payment Proof
+            </h5>
+            
+            {% if topup.proof %}
+            <div class="proof-container">
+                <img src="{{ topup.proof.url }}" 
+                     class="proof-image" 
+                     alt="Payment proof for top-up #{{ topup.id }}"
+                     onclick="openImageModal('{{ topup.proof.url }}')">
+                <div class="mt-3">
+                    <small class="text-cream-40">
+                        <i class="bi bi-info-circle"></i> Click image to view full size
+                    </small>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-secondary mb-0 text-center">
+                <i class="bi bi-image-slash me-2"></i>
+                No proof uploaded for this top-up request.
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Additional Info Card -->
+        <div class="detail-card p-4 mt-4">
+            <h5 class="mb-3" style="font-family: var(--font-display); color: var(--gold);">
+                <i class="bi bi-info-circle me-2"></i>Important Notes
+            </h5>
+            <ul class="small" style="color: var(--cream-60); padding-left: 1.25rem; margin-bottom: 0;">
+                <li>Verify the payment proof matches the reference number</li>
+                <li>Check that the amount matches the request</li>
+                <li>Approval will immediately add funds to user's wallet</li>
+                <li>Rejection should include a reason for the user</li>
+                <li>This action cannot be undone once processed</li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Review Actions - Full Width -->
+    <div class="col-12">
+        <div class="detail-card p-4">
+            <h5 class="mb-3" style="font-family: var(--font-display); color: var(--gold);">
+                <i class="bi bi-clipboard-check me-2"></i>Review Decision
+            </h5>
+            
+            {% if topup.status == "pending" %}
+            <form method="post" id="reviewForm">
+                {% csrf_token %}
+                
+                <div class="mb-4">
+                    <div class="form-label-custom">
+                        <i class="bi bi-chat-dots"></i> Admin Note (Optional)
+                    </div>
+                    <textarea class="form-control-custom" name="admin_note" rows="3" 
+                        placeholder="Add a note explaining your decision... This will be visible to the admin only." id="adminNote"></textarea>
+                    <small class="text-cream-40 mt-1 d-block">
+                        <i class="bi bi-info-circle"></i> Internal note for your records
+                    </small>
+                </div>
+                
+                <div class="action-buttons-review">
+                    <button class="btn-approve" type="submit" name="action" value="approve" id="approveBtn">
+                        <i class="bi bi-check2-circle"></i>
+                        Approve Top-up
+                        <i class="bi bi-arrow-right-short"></i>
+                    </button>
+                    <button class="btn-reject" type="submit" name="action" value="reject" id="rejectBtn">
+                        <i class="bi bi-x-circle"></i>
+                        Reject Top-up
+                    </button>
+                </div>
+            </form>
+            {% else %}
+            <div class="alert alert-info mb-0 text-center">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                This top-up has already been reviewed and cannot be changed.
+                {% if topup.status == "approved" %}
+                <strong>Funds have been added to the user's wallet.</strong>
+                {% elif topup.status == "rejected" %}
+                <strong>No funds were added to the user's wallet.</strong>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Image Modal -->
+<div id="imageModal" class="image-modal" onclick="closeImageModal()">
+    <span class="close-modal">&times;</span>
+    <img class="modal-image" id="modalImage" alt="Full size proof image">
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-custom"></div>
+</div>
+
+<!-- Confirmation Modal (Hidden) -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background: var(--surface); border: 1px solid var(--gold-border); border-radius: 20px;">
+            <div class="modal-header border-bottom" style="border-color: var(--border);">
+                <h5 class="modal-title" style="color: var(--gold);" id="confirmModalTitle">Confirm Action</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="color: var(--cream-60);" id="confirmModalBody">
+                Are you sure you want to proceed?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-outline-gold" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn-gold" id="confirmModalAction">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Review page JavaScript
+    (function() {
+        'use strict';
+        
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const reviewForm = document.getElementById('reviewForm');
+        const approveBtn = document.getElementById('approveBtn');
+        const rejectBtn = document.getElementById('rejectBtn');
+        const adminNote = document.getElementById('adminNote');
+        
+        // Show/hide loading
+        function showLoading() {
+            if (loadingOverlay) loadingOverlay.classList.add('active');
+        }
+        
+        function hideLoading() {
+            if (loadingOverlay) loadingOverlay.classList.remove('active');
+        }
+        
+        // Show toast notification
+        function showToast(type, message) {
+            const toast = document.createElement('div');
+            toast.className = 'position-fixed bottom-0 end-0 m-3';
+            toast.style.zIndex = '9999';
+            
+            let icon = 'bi-info-circle';
+            let bgColor = 'var(--surface)';
+            
+            if (type === 'success') {
+                icon = 'bi-check2-circle';
+                bgColor = 'rgba(30, 50, 30, 0.95)';
+            } else if (type === 'error') {
+                icon = 'bi-exclamation-triangle';
+                bgColor = 'rgba(50, 20, 20, 0.95)';
+            } else if (type === 'warning') {
+                icon = 'bi-exclamation-circle';
+                bgColor = 'rgba(50, 40, 10, 0.95)';
+            }
+            
+            toast.innerHTML = `
+                <div style="background: ${bgColor}; border: 1px solid var(--gold-border); border-radius: 12px; padding: 0.75rem 1rem; backdrop-filter: blur(10px);">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi ${icon}" style="color: var(--gold);"></i>
+                        <span class="small" style="color: var(--cream);">${message}</span>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        // Copy reference to clipboard
+        window.copyReference = function() {
+            const reference = '{{ topup.reference }}';
+            navigator.clipboard.writeText(reference).then(() => {
+                showToast('success', 'Reference copied to clipboard');
+            }).catch(() => {
+                showToast('error', 'Failed to copy reference');
+            });
+        };
+        
+        // Image modal functions
+        window.openImageModal = function(imageUrl) {
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            modalImage.src = imageUrl;
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+        
+        window.closeImageModal = function() {
+            const modal = document.getElementById('imageModal');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        };
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeImageModal();
+            }
+        });
+        
+        // Confirm before approve/reject
+        if (reviewForm) {
+            reviewForm.addEventListener('submit', function(e) {
+                const action = e.submitter?.value;
+                
+                if (action === 'approve') {
+                    const note = adminNote?.value.trim();
+                    let message = 'Are you sure you want to APPROVE this top-up request?\n\n';
+                    message += 'This will:\n';
+                    message += '• Add ₦{{ topup.amount|floatformat:0 }} to the user\'s wallet\n';
+                    message += '• Mark this request as approved\n';
+                    message += '• Send notification to the user\n\n';
+                    if (note) {
+                        message += `Note: "${note}"\n\n`;
+                    }
+                    message += 'This action cannot be undone.';
+                    
+                    if (!confirm(message)) {
+                        e.preventDefault();
+                    } else {
+                        showLoading();
+                    }
+                } else if (action === 'reject') {
+                    const note = adminNote?.value.trim();
+                    let message = 'Are you sure you want to REJECT this top-up request?\n\n';
+                    message += 'This will:\n';
+                    message += '• Mark this request as rejected\n';
+                    message += '• NOT add any funds to the wallet\n';
+                    message += '• Send notification to the user\n\n';
+                    if (!note) {
+                        message += '⚠️ Warning: You have not added an admin note.\n';
+                        message += 'It is recommended to provide a reason for rejection.\n\n';
+                    } else {
+                        message += `Note: "${note}"\n\n`;
+                    }
+                    message += 'This action cannot be undone.';
+                    
+                    if (!confirm(message)) {
+                        e.preventDefault();
+                    } else {
+                        showLoading();
+                    }
+                }
+            });
+        }
+        
+        // Auto-save admin note to localStorage
+        if (adminNote) {
+            const savedNote = localStorage.getItem(`admin_note_{{ topup.id }}`);
+            if (savedNote && !adminNote.value) {
+                adminNote.value = savedNote;
+            }
+            
+            adminNote.addEventListener('input', function() {
+                localStorage.setItem(`admin_note_{{ topup.id }}`, this.value);
+            });
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + Enter to approve
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                if (approveBtn && !approveBtn.disabled) {
+                    approveBtn.click();
+                }
+            }
+            
+            // Press 'A' to focus approve button
+            if (e.key === 'a' || e.key === 'A') {
+                e.preventDefault();
+                if (approveBtn && !approveBtn.disabled) {
+                    approveBtn.focus();
+                    showToast('info', 'Press Enter to confirm approval');
+                }
+            }
+            
+            // Press 'R' to focus reject button
+            if (e.key === 'r' || e.key === 'R') {
+                e.preventDefault();
+                if (rejectBtn && !rejectBtn.disabled) {
+                    rejectBtn.focus();
+                    showToast('info', 'Press Enter to confirm rejection');
+                }
+            }
+            
+            // Press 'N' to focus admin note
+            if (e.key === 'n' || e.key === 'N') {
+                e.preventDefault();
+                if (adminNote) {
+                    adminNote.focus();
+                }
+            }
+        });
+        
+        // Prevent accidental navigation
+        let formChanged = false;
+        if (adminNote) {
+            adminNote.addEventListener('input', function() {
+                formChanged = true;
+            });
+        }
+        
+        window.addEventListener('beforeunload', function(e) {
+            if (formChanged && adminNote?.value && {{ topup.status|default:"'pending'" }} === 'pending') {
+                e.preventDefault();
+                e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+                return e.returnValue;
+            }
+        });
+        
+        // Initialize tooltips (optional)
+        function initTooltips() {
+            const elements = document.querySelectorAll('[title]');
+            elements.forEach(el => {
+                if (!el.classList.contains('no-tooltip')) {
+                    el.style.cursor = 'help';
+                }
+            });
+        }
+        
+        // Display warning if no proof
+        if (!{{ topup.proof|yesno:"true,false" }}) {
+            console.log('No proof attached to this top-up request');
+        }
+        
+        // Initialize
+        function init() {
+            initTooltips();
+            
+            // Add keyboard shortcut hint
+            const hint = document.createElement('div');
+            hint.className = 'position-fixed bottom-0 start-0 m-3';
+            hint.style.zIndex = '1000';
+            hint.innerHTML = `
+                <div class="small text-cream-40" style="background: var(--cream-08); padding: 0.3rem 0.8rem; border-radius: 100px; font-size: 0.7rem;">
+                    <i class="bi bi-keyboard"></i> Shortcuts: 
+                    <kbd style="background: var(--surface); padding: 0.1rem 0.3rem; border-radius: 4px;">A</kbd> Approve, 
+                    <kbd style="background: var(--surface); padding: 0.1rem 0.3rem; border-radius: 4px;">R</kbd> Reject, 
+                    <kbd style="background: var(--surface); padding: 0.1rem 0.3rem; border-radius: 4px;">N</kbd> Note
+                </div>
+            `;
+            // Uncomment to show keyboard shortcuts hint
+            // document.body.appendChild(hint);
+        }
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+        
+    })();
+</script>
+{% endblock %}

@@ -1,114 +1,875 @@
 {% extends "control/base.html" %}
-{% block title %}Dashboard{% endblock %}
+{% load static %}
+
+{% block title %}Dashboard · Saveur Admin{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Dashboard specific styles */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: var(--cream-04);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 1.25rem;
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-card:hover {
+        border-color: var(--gold-border);
+        transform: translateY(-2px);
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--gold), var(--gold-light));
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+    
+    .stat-card:hover::before {
+        opacity: 1;
+    }
+    
+    .stat-icon {
+        position: absolute;
+        right: 1.25rem;
+        top: 1.25rem;
+        font-size: 2rem;
+        opacity: 0.1;
+        color: var(--gold);
+    }
+    
+    .stat-title {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--cream-40);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    
+    .stat-value {
+        font-family: var(--font-display);
+        font-size: 2rem;
+        font-weight: 400;
+        color: var(--gold);
+        line-height: 1.2;
+        margin-bottom: 0.25rem;
+    }
+    
+    .stat-trend {
+        font-size: 0.7rem;
+        color: var(--cream-40);
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    
+    .trend-up {
+        color: #8fdf8f;
+    }
+    
+    .trend-down {
+        color: #e0a0a0;
+    }
+    
+    /* Recent orders table */
+    .recent-orders-card {
+        background: var(--cream-04);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    
+    .card-header-custom {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .card-header-custom h5 {
+        margin: 0;
+        font-family: var(--font-display);
+        color: var(--gold);
+        font-size: 1.1rem;
+    }
+    
+    .view-all-link {
+        color: var(--cream-40);
+        text-decoration: none;
+        font-size: 0.75rem;
+        transition: color 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    
+    .view-all-link:hover {
+        color: var(--gold);
+    }
+    
+    /* Dashboard table */
+    .dashboard-table {
+        margin-bottom: 0;
+        width: 100%;
+        background: transparent;
+    }
+    
+    .dashboard-table thead th {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--gold) !important;
+        border-bottom: 1px solid var(--border);
+        padding: 1rem 0.75rem;
+        background: var(--cream-08);
+        font-weight: 600;
+    }
+    
+    .dashboard-table tbody td {
+        padding: 0.75rem;
+        border-bottom: 1px solid var(--border);
+        color: var(--cream-60) !important;
+        vertical-align: middle;
+        background: transparent;
+    }
+    
+    .dashboard-table tbody tr {
+        transition: all 0.2s ease;
+        background: transparent;
+    }
+    
+    .dashboard-table tbody tr:hover {
+        background: var(--cream-08);
+    }
+    
+    .dashboard-table tbody tr:hover td {
+        color: var(--cream) !important;
+    }
+    
+    /* Status badges for dashboard */
+    .status-badge-dashboard {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 100px;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+    
+    .status-pending-dash {
+        background: rgba(200, 170, 110, 0.15);
+        color: var(--gold);
+    }
+    
+    .status-preparing-dash {
+        background: rgba(100, 160, 200, 0.15);
+        color: #7fc4e0;
+    }
+    
+    .status-delivered-dash {
+        background: rgba(100, 200, 100, 0.15);
+        color: #8fdf8f;
+    }
+    
+    .status-cancelled-dash {
+        background: rgba(200, 100, 100, 0.15);
+        color: #e0a0a0;
+    }
+    
+    /* Stats lists */
+    .stats-list {
+        background: var(--cream-04);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    
+    .stats-list-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        transition: all 0.2s ease;
+    }
+    
+    .stats-list-item:last-child {
+        border-bottom: none;
+    }
+    
+    .stats-list-item:hover {
+        background: var(--cream-08);
+        padding-left: 1.5rem;
+    }
+    
+    .stats-list-label {
+        color: var(--cream-60);
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .stats-list-value {
+        font-weight: 600;
+        color: var(--gold);
+        font-size: 1rem;
+    }
+    
+    /* Top foods list */
+    .top-foods-list {
+        background: var(--cream-04);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    
+    .top-food-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        transition: all 0.2s ease;
+    }
+    
+    .top-food-item:last-child {
+        border-bottom: none;
+    }
+    
+    .top-food-item:hover {
+        background: var(--cream-08);
+        padding-left: 1.5rem;
+    }
+    
+    .top-food-rank {
+        width: 28px;
+        height: 28px;
+        background: var(--cream-08);
+        border-radius: 100px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--gold);
+        margin-right: 0.75rem;
+    }
+    
+    .top-food-name {
+        color: var(--cream);
+        font-weight: 500;
+        flex: 1;
+    }
+    
+    .top-food-qty {
+        background: var(--gold-dim);
+        color: var(--gold);
+        padding: 0.2rem 0.6rem;
+        border-radius: 100px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    
+    .gold-medal {
+        background: var(--gold);
+        color: var(--obsidian);
+    }
+    
+    /* Loading overlay */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(14, 12, 10, 0.8);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .loading-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .spinner-custom {
+        width: 50px;
+        height: 50px;
+        border: 3px solid var(--cream-08);
+        border-top-color: var(--gold);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Refresh button */
+    .refresh-btn {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--cream-60);
+        border-radius: 100px;
+        padding: 0.3rem 0.8rem;
+        font-size: 0.7rem;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    
+    .refresh-btn:hover {
+        background: var(--gold-dim);
+        border-color: var(--gold);
+        color: var(--gold);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+        }
+        
+        .stat-icon {
+            font-size: 1.5rem;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    /* Order ID link */
+    .order-id-link {
+        color: var(--gold);
+        text-decoration: none;
+        font-weight: 600;
+        font-family: monospace;
+    }
+    
+    .order-id-link:hover {
+        color: var(--gold-light);
+        text-decoration: underline;
+    }
+    
+    /* Empty state */
+    .empty-state-small {
+        text-align: center;
+        padding: 2rem;
+        color: var(--cream-40);
+    }
+    
+    .empty-state-small i {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
+{% block panel_title %}Dashboard{% endblock %}
+{% block panel_subtitle %}Overview of orders, revenue & performance{% endblock %}
+
+{% block action_buttons %}
+<div class="d-flex gap-2">
+    <button class="refresh-btn" id="refreshDashboardBtn">
+        <i class="bi bi-arrow-repeat me-1"></i> Refresh
+    </button>
+    <a href="{% url 'control:orders_list' %}" class="btn-outline-gold">
+        <i class="bi bi-receipt me-1"></i> View All Orders
+    </a>
+</div>
+{% endblock %}
+
 {% block content %}
 
-<h3 class="mb-3">Dashboard</h3>
-
-<div class="row g-3 mb-4">
-    <div class="col-12 col-md-3">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <div class="text-muted">Today Revenue</div>
-                <div class="fs-4 fw-bold">₦{{ today_revenue }}</div>
-            </div>
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="bi bi-cash-stack"></i>
+        </div>
+        <div class="stat-title">
+            <i class="bi bi-calendar-today"></i> Today's Revenue
+        </div>
+        <div class="stat-value" id="todayRevenue">₦{{ today_revenue|default:"0"|floatformat:0 }}</div>
+        <div class="stat-trend" id="todayTrend">
+            <i class="bi bi-arrow-up-short trend-up"></i>
+            <span class="trend-up">+12%</span> vs yesterday
         </div>
     </div>
-    <div class="col-12 col-md-3">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <div class="text-muted">Last 7 Days</div>
-                <div class="fs-4 fw-bold">₦{{ last7_revenue }}</div>
-            </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="bi bi-calendar-week"></i>
+        </div>
+        <div class="stat-title">
+            <i class="bi bi-graph-up"></i> Last 7 Days
+        </div>
+        <div class="stat-value" id="weekRevenue">₦{{ last7_revenue|default:"0"|floatformat:0 }}</div>
+        <div class="stat-trend">
+            <i class="bi bi-calendar-week"></i>
+            <span>Weekly total</span>
         </div>
     </div>
-    <div class="col-12 col-md-3">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <div class="text-muted">Paid Orders</div>
-                <div class="fs-4 fw-bold">{{ paid_orders }}</div>
-            </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="bi bi-cart-check"></i>
+        </div>
+        <div class="stat-title">
+            <i class="bi bi-check2-circle"></i> Paid Orders
+        </div>
+        <div class="stat-value" id="paidOrders">{{ paid_orders|default:"0" }}</div>
+        <div class="stat-trend">
+            <i class="bi bi-percent"></i>
+            <span>Completed payments</span>
         </div>
     </div>
-    <div class="col-12 col-md-3">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <div class="text-muted">Pending Top-ups</div>
-                <div class="fs-4 fw-bold">{{ pending_topups }}</div>
-            </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="bi bi-wallet2"></i>
+        </div>
+        <div class="stat-title">
+            <i class="bi bi-clock-history"></i> Pending Top-ups
+        </div>
+        <div class="stat-value" id="pendingTopups">{{ pending_topups|default:"0" }}</div>
+        <div class="stat-trend">
+            <i class="bi bi-exclamation-circle"></i>
+            <span>Awaiting approval</span>
         </div>
     </div>
 </div>
 
-<div class="row g-3">
+<div class="row g-4">
+    <!-- Recent Orders Section -->
     <div class="col-12 col-lg-7">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <h5 class="mb-3">Recent Orders</h5>
-                    <a href="{% url 'control:orders_list' %}">View all</a>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>User</th>
-                                <th>Status</th>
-                                <th>Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for o in recent_orders %}
-                            <tr>
-                                <td><a href="{% url 'control:order_detail' o.id %}">#{{ o.id }}</a></td>
-                                <td>{{ o.user }}</td>
-                                <td>{{ o.status }}</td>
-                                <td>₦{{ o.total_amount }}</td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="4" class="text-center">No orders yet.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+        <div class="recent-orders-card">
+            <div class="card-header-custom">
+                <h5>
+                    <i class="bi bi-receipt me-2"></i>Recent Orders
+                </h5>
+                <a href="{% url 'control:orders_list' %}" class="view-all-link">
+                    View all <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="dashboard-table table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Status</th>
+                            <th class="text-end">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentOrdersTable">
+                        {% for o in recent_orders %}
+                        <tr onclick="window.location.href='{% url 'control:order_detail' o.id %}'" style="cursor: pointer;">
+                            <td>
+                                <a href="{% url 'control:order_detail' o.id %}" class="order-id-link">#{{ o.id }}</a>
+                            </td>
+                            <td>
+                                <div>{{ o.user.get_full_name|default:o.user.username }}</div>
+                                <small class="text-cream-40">{{ o.user.email|truncatechars:25 }}</small>
+                            </td>
+                            <td>
+                                {% if o.status == 'pending' %}
+                                <span class="status-badge-dashboard status-pending-dash">
+                                    <i class="bi bi-clock"></i> Pending
+                                </span>
+                                {% elif o.status == 'preparing' %}
+                                <span class="status-badge-dashboard status-preparing-dash">
+                                    <i class="bi bi-egg-fried"></i> Preparing
+                                </span>
+                                {% elif o.status == 'delivered' %}
+                                <span class="status-badge-dashboard status-delivered-dash">
+                                    <i class="bi bi-check2-circle"></i> Delivered
+                                </span>
+                                {% elif o.status == 'cancelled' %}
+                                <span class="status-badge-dashboard status-cancelled-dash">
+                                    <i class="bi bi-x-circle"></i> Cancelled
+                                </span>
+                                {% else %}
+                                <span class="status-badge-dashboard">{{ o.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end fw-bold" style="color: var(--gold);">₦{{ o.total_amount }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4">
+                                <div class="empty-state-small">
+                                    <i class="bi bi-inbox"></i>
+                                    <div>No orders yet</div>
+                                    <small>Orders will appear here once customers place them</small>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
+    <!-- Right Column -->
     <div class="col-12 col-lg-5">
-        <div class="card shadow-sm mb-3">
-            <div class="card-body">
-                <h5 class="mb-3">Order Status</h5>
-                <ul class="list-group">
-                    <li class="list-group-item d-flex justify-content-between"><span>Pending</span><b>{{ pending_orders
-                            }}</b></li>
-                    <li class="list-group-item d-flex justify-content-between"><span>Preparing</span><b>{{
-                            preparing_orders }}</b></li>
-                    <li class="list-group-item d-flex justify-content-between"><span>Delivered</span><b>{{
-                            delivered_orders }}</b></li>
-                    <li class="list-group-item d-flex justify-content-between"><span>Cancelled</span><b>{{
-                            cancelled_orders }}</b></li>
-                </ul>
+        <!-- Order Status Distribution -->
+        <div class="stats-list mb-4">
+            <div class="card-header-custom">
+                <h5>
+                    <i class="bi bi-pie-chart me-2"></i>Order Status
+                </h5>
+            </div>
+            <div>
+                <div class="stats-list-item">
+                    <div class="stats-list-label">
+                        <i class="bi bi-clock" style="color: var(--gold);"></i>
+                        Pending
+                    </div>
+                    <div class="stats-list-value" id="pendingCount">{{ pending_orders|default:"0" }}</div>
+                </div>
+                <div class="stats-list-item">
+                    <div class="stats-list-label">
+                        <i class="bi bi-egg-fried" style="color: #7fc4e0;"></i>
+                        Preparing
+                    </div>
+                    <div class="stats-list-value" id="preparingCount">{{ preparing_orders|default:"0" }}</div>
+                </div>
+                <div class="stats-list-item">
+                    <div class="stats-list-label">
+                        <i class="bi bi-check2-circle" style="color: #8fdf8f;"></i>
+                        Delivered
+                    </div>
+                    <div class="stats-list-value" id="deliveredCount">{{ delivered_orders|default:"0" }}</div>
+                </div>
+                <div class="stats-list-item">
+                    <div class="stats-list-label">
+                        <i class="bi bi-x-circle" style="color: #e0a0a0;"></i>
+                        Cancelled
+                    </div>
+                    <div class="stats-list-value" id="cancelledCount">{{ cancelled_orders|default:"0" }}</div>
+                </div>
             </div>
         </div>
 
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h5 class="mb-3">Top Foods</h5>
-                <ul class="list-group">
-                    {% for x in top_foods %}
-                    <li class="list-group-item d-flex justify-content-between">
-                        <span>{{ x.food__name }}</span><b>{{ x.qty }}</b>
-                    </li>
-                    {% empty %}
-                    <li class="list-group-item">No sales yet.</li>
-                    {% endfor %}
-                </ul>
+        <!-- Top Selling Items - FIXED: Removed item_name reference -->
+        <div class="top-foods-list">
+            <div class="card-header-custom">
+                <h5>
+                    <i class="bi bi-trophy me-2"></i>Top Selling Items
+                </h5>
+            </div>
+            <div id="topFoodsList">
+                {% for x in top_foods %}
+                <div class="top-food-item">
+                    <div style="display: flex; align-items: center;">
+                        <div class="top-food-rank {% if forloop.first %}gold-medal{% endif %}">
+                            {% if forloop.first %}
+                            <i class="bi bi-star-fill" style="font-size: 0.6rem;"></i>
+                            {% else %}
+                            {{ forloop.counter }}
+                            {% endif %}
+                        </div>
+                        <!-- FIXED: Only use food__name, remove item_name -->
+                        <span class="top-food-name">{{ x.food__name }}</span>
+                    </div>
+                    <!-- FIXED: Only use qty, remove total_quantity -->
+                    <div class="top-food-qty">{{ x.qty }} sold</div>
+                </div>
+                {% empty %}
+                <div class="empty-state-small">
+                    <i class="bi bi-egg-fried"></i>
+                    <div>No sales yet</div>
+                    <small>Sales data will appear here once orders are placed</small>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Quick Stats Summary -->
+        <div class="stats-list mt-4">
+            <div class="card-header-custom">
+                <h5>
+                    <i class="bi bi-bar-chart-steps me-2"></i>Quick Stats
+                </h5>
+            </div>
+            <div>
+                <div class="stats-list-item">
+                    <div class="stats-list-label">
+                        <i class="bi bi-people"></i>
+                        Total Customers
+                    </div>
+                    <div class="stats-list-value" id="totalCustomers">{{ total_customers|default:"—" }}</div>
+                </div>
+                <div class="stats-list-item">
+                    <div class="stats-list-label">
+                        <i class="bi bi-cart-check"></i>
+                        Completion Rate
+                    </div>
+                    <div class="stats-list-value" id="completionRate">{{ completion_rate|default:"0" }}%</div>
+                </div>
+                <div class="stats-list-item">
+                    <div class="stats-list-label">
+                        <i class="bi bi-cup-straw"></i>
+                        Total Menu Items
+                    </div>
+                    <div class="stats-list-value" id="totalItems">{{ total_menu_items|default:"0" }}</div>
+                </div>
+                <div class="stats-list-item">
+                    <div class="stats-list-label">
+                        <i class="bi bi-currency-dollar"></i>
+                        Average Order Value
+                    </div>
+                    <div class="stats-list-value" id="avgOrderValue">₦{{ avg_order_value|default:"0"|floatformat:0 }}</div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-custom"></div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Dashboard JavaScript
+    (function() {
+        'use strict';
+        
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const refreshBtn = document.getElementById('refreshDashboardBtn');
+        
+        // Show/hide loading
+        function showLoading() {
+            if (loadingOverlay) loadingOverlay.classList.add('active');
+        }
+        
+        function hideLoading() {
+            if (loadingOverlay) loadingOverlay.classList.remove('active');
+        }
+        
+        // Show toast notification
+        function showToast(type, message) {
+            const toast = document.createElement('div');
+            toast.className = 'position-fixed bottom-0 end-0 m-3';
+            toast.style.zIndex = '9999';
+            
+            let icon = 'bi-info-circle';
+            let bgColor = 'var(--surface)';
+            
+            if (type === 'success') {
+                icon = 'bi-check2-circle';
+                bgColor = 'rgba(30, 50, 30, 0.95)';
+            } else if (type === 'error') {
+                icon = 'bi-exclamation-triangle';
+                bgColor = 'rgba(50, 20, 20, 0.95)';
+            } else if (type === 'warning') {
+                icon = 'bi-exclamation-circle';
+                bgColor = 'rgba(50, 40, 10, 0.95)';
+            }
+            
+            toast.innerHTML = `
+                <div style="background: ${bgColor}; border: 1px solid var(--gold-border); border-radius: 12px; padding: 0.75rem 1rem; backdrop-filter: blur(10px);">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi ${icon}" style="color: var(--gold);"></i>
+                        <span class="small" style="color: var(--cream);">${message}</span>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        // Animate counter numbers
+        function animateCounter(element, start, end, duration = 1000, isCurrency = false) {
+            if (!element) return;
+            
+            const startTime = performance.now();
+            
+            function updateCounter(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const current = start + (end - start) * progress;
+                
+                let displayValue = Math.floor(current);
+                if (isCurrency) {
+                    element.textContent = `₦${displayValue.toLocaleString()}`;
+                } else {
+                    element.textContent = displayValue.toLocaleString();
+                }
+                
+                if (progress < 1) {
+                    requestAnimationFrame(updateCounter);
+                } else {
+                    if (isCurrency) {
+                        element.textContent = `₦${end.toLocaleString()}`;
+                    } else {
+                        element.textContent = end.toLocaleString();
+                    }
+                }
+            }
+            
+            requestAnimationFrame(updateCounter);
+        }
+        
+        // Get numeric value from element
+        function getNumericValue(elementId) {
+            const element = document.getElementById(elementId);
+            if (!element) return 0;
+            
+            let text = element.textContent;
+            text = text.replace('₦', '').replace(/,/g, '');
+            return parseInt(text) || 0;
+        }
+        
+        // Animate all stats
+        function animateAllStats() {
+            const todayRevenue = document.getElementById('todayRevenue');
+            const weekRevenue = document.getElementById('weekRevenue');
+            const paidOrders = document.getElementById('paidOrders');
+            const pendingTopups = document.getElementById('pendingTopups');
+            
+            if (todayRevenue) {
+                const target = getNumericValue('todayRevenue');
+                animateCounter(todayRevenue, 0, target, 800, true);
+            }
+            
+            if (weekRevenue) {
+                const target = getNumericValue('weekRevenue');
+                animateCounter(weekRevenue, 0, target, 1000, true);
+            }
+            
+            if (paidOrders) {
+                const target = getNumericValue('paidOrders');
+                animateCounter(paidOrders, 0, target, 600, false);
+            }
+            
+            if (pendingTopups) {
+                const target = getNumericValue('pendingTopups');
+                animateCounter(pendingTopups, 0, target, 600, false);
+            }
+        }
+        
+        // Refresh dashboard data
+        function refreshDashboard() {
+            showLoading();
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        }
+        
+        // Refresh button click handler
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', refreshDashboard);
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+                e.preventDefault();
+                if (refreshBtn) refreshBtn.click();
+            }
+            
+            if (e.key === 'o' || e.key === 'O') {
+                e.preventDefault();
+                window.location.href = "{% url 'control:orders_list' %}";
+            }
+            
+            if (e.key === 'm' || e.key === 'M') {
+                e.preventDefault();
+                window.location.href = "{% url 'control:menu_list' %}";
+            }
+            
+            if (e.key === 't' || e.key === 'T') {
+                e.preventDefault();
+                window.location.href = "{% url 'control:topups_list' %}";
+            }
+        });
+        
+        // Make table rows clickable
+        function makeRowsClickable() {
+            const rows = document.querySelectorAll('#recentOrdersTable tr');
+            rows.forEach(row => {
+                if (row.getAttribute('onclick')) return;
+                const link = row.querySelector('.order-id-link');
+                if (link && link.href) {
+                    row.style.cursor = 'pointer';
+                    row.addEventListener('click', function(e) {
+                        if (e.target.tagName === 'A') return;
+                        window.location.href = link.href;
+                    });
+                }
+            });
+        }
+        
+        // Show welcome message on first visit
+        function showWelcomeMessage() {
+            const hasSeenWelcome = localStorage.getItem('dashboard_welcome_seen');
+            if (!hasSeenWelcome) {
+                setTimeout(() => {
+                    showToast('info', 'Welcome! Use shortcuts: O=Orders, M=Menu, T=Top-ups, Ctrl+R=Refresh');
+                    localStorage.setItem('dashboard_welcome_seen', 'true');
+                }, 1000);
+            }
+        }
+        
+        // Initialize
+        function init() {
+            animateAllStats();
+            makeRowsClickable();
+            showWelcomeMessage();
+        }
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+        
+    })();
+</script>
 {% endblock %}

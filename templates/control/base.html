@@ -1,67 +1,486 @@
 <!doctype html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{% block title %}Control Panel{% endblock %}</title>
+    <title>{% block title %}Control Panel · Saveur{% endblock %}</title>
 
-    <!-- Bootstrap (CDN) -->
+    <!-- Fonts: Cormorant Garamond + DM Sans, same as main site -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap + Icons + static files -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    {% load static %}
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <meta name="theme-color" content="#0e0c0a">
 
     <style>
-        .sidebar {
-            min-height: 100vh;
+        /* ─── GLOBAL TOKENS (same as frontend) ─── */
+        :root {
+            --gold:        #c8aa6e;
+            --gold-light:  #d4bc82;
+            --gold-dim:    rgba(200, 170, 110, 0.15);
+            --gold-border: rgba(200, 170, 110, 0.22);
+            --obsidian:    #0e0c0a;
+            --surface:     #161310;
+            --surface-2:   #1c1915;
+            --cream:       #f0ece4;
+            --cream-60:    rgba(240, 236, 228, 0.6);
+            --cream-40:    rgba(240, 236, 228, 0.4);
+            --cream-20:    rgba(240, 236, 228, 0.2);
+            --cream-08:    rgba(240, 236, 228, 0.08);
+            --cream-04:    rgba(240, 236, 228, 0.04);
+            --border:      rgba(200, 170, 110, 0.12);
+            --border-mid:  rgba(200, 170, 110, 0.22);
+            --font-display: 'Cormorant Garamond', Georgia, serif;
+            --font-body:    'DM Sans', system-ui, sans-serif;
+            --nav-h:       68px;
         }
 
-        .sidebar a {
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--obsidian);
+            font-family: var(--font-body);
+            color: var(--cream);
+            margin: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* control panel specific layout — dark, refined, admin-style but with Saveur elegance */
+        .control-wrapper {
+            min-height: 100vh;
+            display: flex;
+            flex-wrap: nowrap;
+        }
+
+        /* ========= SIDEBAR (premium dark) ========= */
+        .control-sidebar {
+            width: 280px;
+            background: rgba(22, 19, 16, 0.96);
+            backdrop-filter: blur(2px);
+            border-right: 1px solid var(--border-mid);
+            flex-shrink: 0;
+            padding: 1.8rem 1.2rem;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
+        }
+
+        /* brand inside sidebar */
+        .sidebar-brand {
+            font-family: var(--font-display);
+            font-size: 1.8rem;
+            font-weight: 300;
+            letter-spacing: 0.06em;
+            color: var(--cream);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: baseline;
+            gap: 0.4rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--gold-border);
+            padding-bottom: 0.75rem;
+            width: 100%;
+        }
+        .sidebar-brand .dot {
+            width: 6px;
+            height: 6px;
+            background: var(--gold);
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .sidebar-brand small {
+            font-size: 0.65rem;
+            letter-spacing: 0.2em;
+            font-weight: 300;
+            color: var(--gold);
+            margin-left: auto;
+            font-family: var(--font-body);
+        }
+
+        /* nav list items */
+        .sidebar-nav {
+            flex: 1;
+        }
+        .nav-item-control {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.65rem 1rem;
+            margin-bottom: 0.3rem;
+            border-radius: 14px;
+            color: var(--cream-60);
+            font-size: 0.85rem;
+            font-weight: 450;
+            letter-spacing: 0.01em;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        .nav-item-control i {
+            font-size: 1.2rem;
+            width: 1.5rem;
+            color: var(--cream-40);
+            transition: color 0.2s;
+        }
+        .nav-item-control:hover {
+            background: var(--cream-08);
+            color: var(--cream);
+        }
+        .nav-item-control:hover i {
+            color: var(--gold);
+        }
+        .nav-item-control.active {
+            background: var(--gold-dim);
+            color: var(--gold);
+            border-left: 2px solid var(--gold);
+        }
+        .nav-item-control.active i {
+            color: var(--gold);
+        }
+
+        /* user card inside sidebar */
+        .sidebar-user {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+        .user-label {
+            font-size: 0.65rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--cream-40);
+            margin-bottom: 0.35rem;
+        }
+        .user-name {
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: var(--cream);
+            margin-bottom: 0.5rem;
+        }
+        .btn-logout-side {
+            background: transparent;
+            border: 1px solid var(--border-mid);
+            padding: 0.35rem 0.9rem;
+            border-radius: 100px;
+            font-size: 0.7rem;
+            color: var(--cream-60);
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .btn-logout-side:hover {
+            background: rgba(200, 170, 110, 0.1);
+            border-color: var(--gold-border);
+            color: var(--gold);
+        }
+
+        /* ========= MAIN CONTENT AREA ========= */
+        .control-main {
+            flex: 1;
+            background: var(--obsidian);
+            padding: 2rem 2rem 2.5rem 2rem;
+            overflow-x: auto;
+        }
+
+        /* page card – matches main site style but full-width */
+        .admin-card {
+            background: var(--cream-04);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 1.8rem;
+            transition: all 0.2s;
+        }
+        @media (min-width: 768px) {
+            .admin-card {
+                padding: 2rem 2.2rem;
+            }
+        }
+
+        /* table redesign (admin tables) */
+        .table-saveur {
+            --bs-table-bg: transparent;
+            --bs-table-striped-bg: rgba(240, 236, 228, 0.02);
+            --bs-table-hover-bg: rgba(240, 236, 228, 0.05);
+            color: var(--cream-60);
+            border-color: var(--border);
+            font-size: 0.85rem;
+        }
+        .table-saveur th {
+            font-weight: 500;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            color: var(--gold);
+            border-bottom-color: var(--border-mid);
+        }
+        .table-saveur td {
+            vertical-align: middle;
+            border-top-color: var(--border);
+            color: var(--cream-80);
+        }
+        .table-saveur a {
+            color: var(--gold-light);
             text-decoration: none;
         }
+        .table-saveur a:hover {
+            color: var(--gold);
+            text-decoration: underline;
+        }
 
-        .table td,
-        .table th {
-            vertical-align: middle;
+        /* badges & buttons admin */
+        .badge-gold {
+            background: var(--gold-dim);
+            color: var(--gold);
+            border-radius: 40px;
+            padding: 0.3rem 0.7rem;
+            font-weight: 400;
+            font-size: 0.7rem;
+        }
+        .btn-outline-gold {
+            border: 1px solid var(--gold-border);
+            background: transparent;
+            color: var(--cream);
+            border-radius: 100px;
+            padding: 0.3rem 1rem;
+            font-size: 0.75rem;
+            transition: 0.2s;
+        }
+        .btn-outline-gold:hover {
+            background: var(--gold-dim);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .btn-gold {
+            background: var(--gold);
+            border: none;
+            color: var(--obsidian);
+            border-radius: 100px;
+            padding: 0.4rem 1.2rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .btn-gold:hover {
+            background: var(--gold-light);
+            color: var(--obsidian);
+        }
+
+        /* alerts matching main design */
+        .alert {
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: var(--surface) !important;
+            color: var(--cream-60) !important;
+            margin-bottom: 1.5rem;
+            font-size: 0.85rem;
+        }
+        .alert-success {
+            background: rgba(30, 50, 30, 0.6) !important;
+            border-color: rgba(100, 160, 100, 0.3) !important;
+            color: #b8dfb8 !important;
+        }
+        .alert-danger, .alert-error {
+            background: rgba(50, 20, 20, 0.6) !important;
+            border-color: rgba(180, 80, 80, 0.3) !important;
+            color: #f0b0b0 !important;
+        }
+        .alert-warning {
+            background: rgba(50, 40, 10, 0.6) !important;
+            border-color: var(--gold-border) !important;
+            color: var(--gold) !important;
+        }
+        .alert-info {
+            background: rgba(20, 35, 55, 0.6) !important;
+            border-color: rgba(80, 130, 200, 0.25) !important;
+            color: #aad0f0 !important;
+        }
+
+        /* page headings */
+        .page-title-control {
+            font-family: var(--font-display);
+            font-size: 1.8rem;
+            font-weight: 300;
+            color: var(--cream);
+            margin-bottom: 0.25rem;
+        }
+        .page-subtitle {
+            font-size: 0.75rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--cream-40);
+            margin-bottom: 1.25rem;
+            border-left: 2px solid var(--gold);
+            padding-left: 0.75rem;
+        }
+
+        /* stats cards (if needed for dashboard) */
+        .stat-card {
+            background: var(--cream-04);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 1.2rem 1rem;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .stat-card:hover {
+            border-color: var(--gold-border);
+            background: rgba(240, 236, 228, 0.06);
+        }
+        .stat-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--cream-40);
+        }
+        .stat-value {
+            font-family: var(--font-display);
+            font-size: 2rem;
+            font-weight: 300;
+            color: var(--gold);
+            line-height: 1.2;
+        }
+
+        /* responsive adjustments */
+        @media (max-width: 768px) {
+            .control-sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border-mid);
+                padding: 1rem;
+            }
+            .control-wrapper {
+                flex-direction: column;
+            }
+            .control-main {
+                padding: 1.5rem;
+            }
+            .sidebar-brand small {
+                display: none;
+            }
+        }
+        /* custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--obsidian);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--gold-dim);
+            border-radius: 5px;
         }
     </style>
+    {% block extra_head %}{% endblock %}
 </head>
 
-<body class="bg-light">
+<body>
+    <div class="control-wrapper">
+        <!-- premium SIDEBAR (control panel) -->
+        <aside class="control-sidebar">
+            <div>
+                <a href="{% url 'control:dashboard' %}" class="sidebar-brand">
+                    Saveur <span class="dot"></span>
+                    <small>ADMIN</small>
+                </a>
+            </div>
+            <div class="sidebar-nav">
+                <a class="nav-item-control {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" 
+                   href="{% url 'control:dashboard' %}">
+                    <i class="bi bi-speedometer2"></i> Dashboard
+                </a>
+                <a class="nav-item-control {% if 'orders' in request.path %}active{% endif %}" 
+                   href="{% url 'control:orders_list' %}">
+                    <i class="bi bi-receipt"></i> Orders
+                </a>
+                <a class="nav-item-control {% if 'menu' in request.path %}active{% endif %}" 
+                   href="{% url 'control:menu_list' %}">
+                    <i class="bi bi-grid-3x3-gap-fill"></i> Menu
+                </a>
+                <a class="nav-item-control {% if 'topups' in request.path %}active{% endif %}" 
+                   href="{% url 'control:topups_list' %}">
+                    <i class="bi bi-plus-circle"></i> Wallet Top-ups
+                </a>
+                <a class="nav-item-control {% if 'transactions' in request.path %}active{% endif %}" 
+                   href="{% url 'control:wallet_transactions' %}">
+                    <i class="bi bi-arrow-left-right"></i> Transactions
+                </a>
+                <!-- optional extra block for custom sidebar links -->
+                {% block extra_sidebar %}{% endblock %}
+            </div>
+            <div class="sidebar-user">
+                <div class="user-label">Logged in as</div>
+                <div class="user-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+                <a class="btn-logout-side" href="{% url 'accounts:logout' %}">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+        </aside>
 
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <aside class="col-12 col-md-3 col-lg-2 bg-white border-end sidebar p-3">
-                <h5 class="mb-3">Control</h5>
-                <div class="list-group">
-                    <a class="list-group-item list-group-item-action" href="{% url 'control:dashboard' %}">Dashboard</a>
-                    <a class="list-group-item list-group-item-action" href="{% url 'control:orders_list' %}">Orders</a>
-                    <a class="list-group-item list-group-item-action" href="{% url 'control:menu_list' %}">Menu</a>
-                    <a class="list-group-item list-group-item-action" href="{% url 'control:topups_list' %}">Wallet
-                        Top-ups</a>
-                    <a class="list-group-item list-group-item-action"
-                        href="{% url 'control:wallet_transactions' %}">Transactions</a>
-                </div>
-
-                <hr>
-                <small class="text-muted d-block">Logged in as</small>
-                <div class="fw-semibold">{{ request.user }}</div>
-                <a class="btn btn-outline-secondary btn-sm mt-3" href="{% url 'accounts:logout' %}">Logout</a>
-            </aside>
-
-            <!-- Main content -->
-            <main class="col-12 col-md-9 col-lg-10 p-4">
-                {% if messages %}
-                {% for m in messages %}
-                <div class="alert alert-{{ m.tags }} mb-3" role="alert">{{ m }}</div>
+        <!-- MAIN CONTENT (dark premium layout) -->
+        <main class="control-main">
+            <!-- messages (toasts / alerts) elegantly styled -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4" role="alert">
+                        <i class="bi bi-info-circle me-2"></i> {{ message }}
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
                 {% endfor %}
-                {% endif %}
+            {% endif %}
 
-                {% block content %}{% endblock %}
-            </main>
-        </div>
+            <!-- page header block (optional title / actions) -->
+            {% block page_header %}
+            <div class="d-flex flex-wrap justify-content-between align-items-end mb-3">
+                <div>
+                    <h1 class="page-title-control">{% block panel_title %}Control Panel{% endblock %}</h1>
+                    <div class="page-subtitle">{% block panel_subtitle %}Manage orders, menu & finances{% endblock %}</div>
+                </div>
+                {% block action_buttons %}{% endblock %}
+            </div>
+            {% endblock %}
+
+            <!-- main card container (unifies all pages with brand card) -->
+            <div class="admin-card">
+                {% block content %}
+                <!-- child templates content goes here -->
+                {% endblock %}
+            </div>
+        </main>
     </div>
 
+    <!-- Bootstrap JS Bundle + optional custom scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // active nav highlighting for sidebar (based on current path)
+        (function() {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.nav-item-control');
+            navLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                if (href && href !== '/' && href !== '#' && currentPath.startsWith(href)) {
+                    link.classList.add('active');
+                } else if (href === currentPath) {
+                    link.classList.add('active');
+                }
+                // for 'dashboard' exact match
+                if (href === "{% url 'control:dashboard' %}" && currentPath === href) {
+                    link.classList.add('active');
+                }
+            });
+        })();
+    </script>
+    {% block extra_js %}{% endblock %}
 </body>
-
 </html>

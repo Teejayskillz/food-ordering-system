@@ -1,9 +1,78 @@
-<h1>{% if mode == "create" %}Add Food Item{% else %}Edit Food Item{% endif %}</h1>
+{% extends "control/base.html" %}
+{% block title %}
+{% if mode == "create" %}Add Food Item{% else %}Edit Food Item{% endif %}
+{% endblock %}
 
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Save</button>
-</form>
+{% block content %}
 
-<p><a href="{% url 'control:menu_list' %}">← Back to menu</a></p>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-1">
+            {% if mode == "create" %}
+            Add Food Item
+            {% else %}
+            Edit Food Item
+            {% endif %}
+        </h3>
+        <div class="text-muted small">
+            {% if mode == "create" %}
+            Create a new menu item
+            {% else %}
+            Update food item details
+            {% endif %}
+        </div>
+    </div>
+
+    <a href="{% url 'control:menu_list' %}" class="btn btn-outline-secondary">
+        ← Back to menu
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-12 col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            {{ field.label }}
+                        </label>
+
+                        {{ field }}
+
+                        {% if field.help_text %}
+                        <div class="form-text">
+                            {{ field.help_text }}
+                        </div>
+                        {% endif %}
+
+                        {% if field.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ field.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            Save
+                        </button>
+
+                        <a href="{% url 'control:menu_list' %}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

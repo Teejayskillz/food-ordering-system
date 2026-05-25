@@ -1,97 +1,968 @@
 {% extends "control/base.html" %}
-{% block title %}Orders{% endblock %}
+{% load static %}
+
+{% block title %}Orders · Saveur Admin{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Orders page specific styles */
+    .filter-section {
+        background: var(--cream-04);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .filter-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--cream-40);
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-control-custom, 
+    .form-select-custom {
+        background: var(--cream-08);
+        border: 1px solid var(--border);
+        color: var(--cream);
+        border-radius: 100px;
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+    
+    .form-control-custom:focus,
+    .form-select-custom:focus {
+        background: var(--cream-08);
+        border-color: var(--gold);
+        color: var(--cream);
+        box-shadow: 0 0 0 3px var(--gold-dim);
+        outline: none;
+    }
+    
+    .form-control-custom::placeholder {
+        color: var(--cream-40);
+        font-size: 0.8rem;
+    }
+    
+    /* Status badges with specific colors */
+    .status-badge-order {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.3rem 0.8rem;
+        border-radius: 100px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+    }
+    
+    .status-pending {
+        background: rgba(200, 170, 110, 0.15);
+        color: var(--gold);
+        border: 1px solid rgba(200, 170, 110, 0.3);
+    }
+    
+    .status-preparing {
+        background: rgba(100, 160, 200, 0.15);
+        color: #7fc4e0;
+        border: 1px solid rgba(100, 160, 200, 0.3);
+    }
+    
+    .status-delivered {
+        background: rgba(100, 200, 100, 0.15);
+        color: #8fdf8f;
+        border: 1px solid rgba(100, 200, 100, 0.3);
+    }
+    
+    .status-cancelled {
+        background: rgba(200, 100, 100, 0.15);
+        color: #e0a0a0;
+        border: 1px solid rgba(200, 100, 100, 0.3);
+    }
+    
+    .status-other {
+        background: var(--cream-08);
+        color: var(--cream-60);
+        border: 1px solid var(--border);
+    }
+    
+    /* Payment badges */
+    .payment-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.2rem 0.7rem;
+        border-radius: 100px;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+    
+    .payment-paid {
+        background: rgba(100, 200, 100, 0.15);
+        color: #8fdf8f;
+    }
+    
+    .payment-unpaid {
+        background: rgba(200, 170, 110, 0.15);
+        color: var(--gold);
+    }
+    
+    /* Order row hover effect */
+    .order-row {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .order-row:hover {
+        background: var(--cream-08) !important;
+        transform: translateX(2px);
+    }
+    
+    /* Pagination styling */
+    .pagination-custom {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .page-link-custom {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.4rem 0.9rem;
+        background: var(--cream-04);
+        border: 1px solid var(--border);
+        color: var(--cream-60);
+        text-decoration: none;
+        border-radius: 100px;
+        font-size: 0.8rem;
+        transition: all 0.2s ease;
+    }
+    
+    .page-link-custom:hover {
+        background: var(--gold-dim);
+        border-color: var(--gold);
+        color: var(--gold);
+    }
+    
+    .page-link-custom.active {
+        background: var(--gold);
+        border-color: var(--gold);
+        color: var(--obsidian);
+    }
+    
+    .page-link-custom.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+    
+    /* Order ID link styling */
+    .order-id-link {
+        color: var(--gold);
+        text-decoration: none;
+        font-weight: 600;
+        font-family: monospace;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+    
+    .order-id-link:hover {
+        color: var(--gold-light);
+        text-decoration: underline;
+    }
+    
+    /* Clear filters button */
+    .clear-filters {
+        color: var(--cream-40);
+        text-decoration: none;
+        font-size: 0.75rem;
+        transition: color 0.2s;
+    }
+    
+    .clear-filters:hover {
+        color: var(--gold);
+    }
+    
+    /* Export button */
+    .btn-export {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--cream-60);
+        border-radius: 100px;
+        padding: 0.4rem 1rem;
+        font-size: 0.75rem;
+        transition: all 0.2s;
+    }
+    
+    .btn-export:hover {
+        background: var(--gold-dim);
+        border-color: var(--gold);
+        color: var(--gold);
+    }
+    
+    /* Loading overlay */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(14, 12, 10, 0.8);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .loading-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .spinner-custom {
+        width: 50px;
+        height: 50px;
+        border: 3px solid var(--cream-08);
+        border-top-color: var(--gold);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Empty state styling */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--cream-40);
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .filter-section {
+            padding: 1rem;
+        }
+        
+        .table-responsive {
+            font-size: 0.8rem;
+        }
+        
+        .status-badge-order {
+            font-size: 0.65rem;
+            padding: 0.2rem 0.6rem;
+        }
+    }
+    
+    /* Tooltip styles */
+    .order-tooltip {
+        position: relative;
+        cursor: help;
+    }
+    
+    /* Bulk actions bar */
+    .bulk-actions {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .bulk-actions.active {
+        display: flex;
+    }
+    
+    /* Checkbox styling */
+    .order-checkbox {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: var(--gold);
+    }
+</style>
+{% endblock %}
+
+{% block panel_title %}Orders{% endblock %}
+{% block panel_subtitle %}Manage and track customer orders{% endblock %}
+
+{% block action_buttons %}
+<div class="d-flex gap-2">
+    <button class="btn-export" id="exportOrdersBtn">
+        <i class="bi bi-download me-1"></i> Export
+    </button>
+    <button class="btn-outline-gold" id="refreshOrdersBtn">
+        <i class="bi bi-arrow-repeat me-1"></i> Refresh
+    </button>
+</div>
+{% endblock %}
+
 {% block content %}
 
-<div class="d-flex align-items-center justify-content-between mb-3">
-    <h3 class="mb-0">Orders</h3>
+<!-- Filter Section -->
+<div class="filter-section">
+    <form method="get" id="filterForm">
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-4">
+                <div class="filter-label">
+                    <i class="bi bi-search me-1"></i> Search
+                </div>
+                <input type="text" 
+                       class="form-control-custom w-100" 
+                       name="q" 
+                       value="{{ q }}" 
+                       placeholder="Order ID, customer name, email, or phone..."
+                       id="searchInput">
+            </div>
+            
+            <div class="col-12 col-md-3">
+                <div class="filter-label">
+                    <i class="bi bi-funnel me-1"></i> Status
+                </div>
+                <select class="form-select-custom w-100" name="status" id="statusSelect">
+                    <option value="">All statuses</option>
+                    {% for s in allowed_statuses %}
+                        <option value="{{ s }}" {% if status == s %}selected{% endif %}>
+                            {{ s|title }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-12 col-md-3">
+                <div class="filter-label">
+                    <i class="bi bi-calendar me-1"></i> Date Range
+                </div>
+                <select class="form-select-custom w-100" name="date_range" id="dateRangeSelect">
+                    <option value="">All time</option>
+                    <option value="today">Today</option>
+                    <option value="week">Last 7 days</option>
+                    <option value="month">Last 30 days</option>
+                    <option value="quarter">Last 90 days</option>
+                </select>
+            </div>
+            
+            <div class="col-12 col-md-2">
+                <div class="filter-label">&nbsp;</div>
+                <div class="d-flex gap-2">
+                    <button class="btn-gold w-100" type="submit">
+                        <i class="bi bi-filter me-1"></i> Apply
+                    </button>
+                    {% if q or status %}
+                    <a href="{% url 'control:orders_list' %}" class="clear-filters d-flex align-items-center">
+                        <i class="bi bi-x-circle me-1"></i> Clear
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </form>
 </div>
 
-<form method="get" class="row g-2 mb-3">
-    <div class="col-12 col-md-4">
-        <input class="form-control" name="q" value="{{ q }}" placeholder="Search order id, email, phone...">
+<!-- Bulk Actions Bar -->
+<div class="bulk-actions" id="bulkActions">
+    <div class="d-flex align-items-center gap-3">
+        <span class="small" id="selectedCount">0</span>
+        <span class="small text-cream-40">orders selected</span>
+        <div class="vr" style="color: var(--border);"></div>
+        <button class="btn-outline-gold btn-sm" onclick="bulkUpdateStatus('preparing')">
+            <i class="bi bi-egg-fried me-1"></i> Mark Preparing
+        </button>
+        <button class="btn-outline-gold btn-sm" onclick="bulkUpdateStatus('delivered')">
+            <i class="bi bi-check2-circle me-1"></i> Mark Delivered
+        </button>
+        <button class="btn-outline-gold btn-sm" onclick="bulkUpdateStatus('cancelled')">
+            <i class="bi bi-x-circle me-1"></i> Cancel
+        </button>
     </div>
+    <button class="btn-outline-gold btn-sm" onclick="clearSelection()">
+        <i class="bi bi-x-lg"></i>
+    </button>
+</div>
 
-    <div class="col-12 col-md-3">
-        <select class="form-select" name="status">
-            <option value="">All statuses</option>
-
-            {% for s in allowed_statuses %}
-            {% if status == s %}
-            <option value="{{ s }}" selected>{{ s }}</option>
-            {% else %}
-            <option value="{{ s }}">{{ s }}</option>
-            {% endif %}
-            {% endfor %}
-        </select>
-    </div>
-
-    <div class="col-12 col-md-2">
-        <button class="btn btn-primary w-100" type="submit">Filter</button>
-    </div>
-</form>
-
-<div class="table-responsive bg-white border rounded">
-    <table class="table table-striped mb-0">
+<!-- Orders Table -->
+<div class="table-responsive">
+    <table class="table table-saveur table-hover mb-0">
         <thead>
             <tr>
-                <th>ID</th>
-                <th>User</th>
+                <th style="width: 40px;">
+                    <input type="checkbox" id="selectAllCheckbox" class="order-checkbox">
+                </th>
+                <th>Order ID</th>
+                <th>Customer</th>
                 <th>Status</th>
                 <th>Total</th>
-                <th>Paid</th>
+                <th>Payment</th>
                 <th>Method</th>
                 <th>Date</th>
+                <th style="width: 60px;">Actions</th>
             </tr>
         </thead>
-
-        <tbody>
+        <tbody id="ordersTableBody">
             {% for o in page_obj %}
-            <tr>
-                <td><a href="{% url 'control:order_detail' o.id %}">#{{ o.id }}</a></td>
-                <td>{{ o.user }}</td>
-                <td><span class="badge text-bg-secondary">{{ o.status }}</span></td>
-                <td>₦{{ o.total_amount }}</td>
+            <tr class="order-row" data-order-id="{{ o.id }}" data-order-status="{{ o.status }}">
+                <td onclick="event.stopPropagation()">
+                    <input type="checkbox" class="order-checkbox order-select" value="{{ o.id }}">
+                </td>
                 <td>
-                    {% if o.is_paid %}
-                    <span class="badge text-bg-success">Yes</span>
+                    <a href="{% url 'control:order_detail' o.id %}" class="order-id-link">#{{ o.id }}</a>
+                </td>
+                <td>
+                    <div class="fw-medium">{{ o.user.get_full_name|default:o.user.username }}</div>
+                    <small class="text-cream-40">{{ o.user.email|default:"" }}</small>
+                </td>
+                <td>
+                    {% if o.status == 'pending' %}
+                        <span class="status-badge-order status-pending">
+                            <i class="bi bi-clock"></i> Pending
+                        </span>
+                    {% elif o.status == 'preparing' %}
+                        <span class="status-badge-order status-preparing">
+                            <i class="bi bi-egg-fried"></i> Preparing
+                        </span>
+                    {% elif o.status == 'delivered' %}
+                        <span class="status-badge-order status-delivered">
+                            <i class="bi bi-check2-circle"></i> Delivered
+                        </span>
+                    {% elif o.status == 'cancelled' %}
+                        <span class="status-badge-order status-cancelled">
+                            <i class="bi bi-x-circle"></i> Cancelled
+                        </span>
                     {% else %}
-                    <span class="badge text-bg-warning">No</span>
+                        <span class="status-badge-order status-other">{{ o.status }}</span>
                     {% endif %}
                 </td>
-                <td>{{ o.payment_method }}</td>
-                <td>{{ o.created_at }}</td>
+                <td class="fw-bold" style="color: var(--gold);">₦{{ o.total_amount }}</td>
+                <td>
+                    {% if o.is_paid %}
+                        <span class="payment-badge payment-paid">
+                            <i class="bi bi-check-circle"></i> Paid
+                        </span>
+                    {% else %}
+                        <span class="payment-badge payment-unpaid">
+                            <i class="bi bi-clock"></i> Unpaid
+                        </span>
+                    {% endif %}
+                </td>
+                <td>
+                    <small class="text-cream-60">
+                        <i class="bi bi-credit-card me-1"></i>
+                        {{ o.payment_method|default:"—" }}
+                    </small>
+                </td>
+                <td>
+                    <small class="text-cream-60" title="{{ o.created_at }}">
+                        <i class="bi bi-calendar3 me-1"></i>
+                        {{ o.created_at|date:"M d, H:i" }}
+                    </small>
+                </td>
+                <td>
+                    <div class="dropdown">
+                        <button class="btn-outline-gold btn-sm dropdown-toggle" style="padding: 0.2rem 0.5rem;" data-bs-toggle="dropdown">
+                            <i class="bi bi-three-dots"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'control:order_detail' o.id %}">
+                                    <i class="bi bi-eye me-2"></i> View Details
+                                </a>
+                            </li>
+                            {% if o.status != 'delivered' and o.status != 'cancelled' %}
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="updateOrderStatus({{ o.id }}, 'preparing'); return false;">
+                                    <i class="bi bi-egg-fried me-2"></i> Mark Preparing
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="updateOrderStatus({{ o.id }}, 'delivered'); return false;">
+                                    <i class="bi bi-check2-circle me-2"></i> Mark Delivered
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="#" onclick="updateOrderStatus({{ o.id }}, 'cancelled'); return false;">
+                                    <i class="bi bi-x-circle me-2"></i> Cancel Order
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="7" class="text-center py-4">No orders found.</td>
+                <td colspan="9">
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <div class="mt-2">No orders found</div>
+                        <small class="text-cream-40">Try adjusting your filters</small>
+                    </div>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
 
-<nav class="mt-3">
-    <ul class="pagination">
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav class="mt-4">
+    <div class="pagination-custom">
         {% if page_obj.has_previous %}
-        <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&status={{ status }}&q={{ q }}">Prev</a>
-        </li>
+            <a class="page-link-custom" href="?page={{ page_obj.previous_page_number }}{% if status %}&status={{ status }}{% endif %}{% if q %}&q={{ q }}{% endif %}">
+                <i class="bi bi-chevron-left"></i> Previous
+            </a>
         {% else %}
-        <li class="page-item disabled"><span class="page-link">Prev</span></li>
+            <span class="page-link-custom disabled">
+                <i class="bi bi-chevron-left"></i> Previous
+            </span>
         {% endif %}
-
-        <li class="page-item disabled">
-            <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-        </li>
-
+        
+        {% for num in page_obj.paginator.page_range %}
+            {% if num == page_obj.number %}
+                <span class="page-link-custom active">{{ num }}</span>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <a class="page-link-custom" href="?page={{ num }}{% if status %}&status={{ status }}{% endif %}{% if q %}&q={{ q }}{% endif %}">
+                    {{ num }}
+                </a>
+            {% endif %}
+        {% endfor %}
+        
         {% if page_obj.has_next %}
-        <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.next_page_number }}&status={{ status }}&q={{ q }}">Next</a>
-        </li>
+            <a class="page-link-custom" href="?page={{ page_obj.next_page_number }}{% if status %}&status={{ status }}{% endif %}{% if q %}&q={{ q }}{% endif %}">
+                Next <i class="bi bi-chevron-right"></i>
+            </a>
         {% else %}
-        <li class="page-item disabled"><span class="page-link">Next</span></li>
+            <span class="page-link-custom disabled">
+                Next <i class="bi bi-chevron-right"></i>
+            </span>
         {% endif %}
-    </ul>
+    </div>
+    <div class="text-center mt-2">
+        <small class="text-cream-40">
+            Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }} orders
+        </small>
+    </div>
 </nav>
+{% endif %}
 
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-custom"></div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Orders page JavaScript
+    (function() {
+        'use strict';
+        
+        // DOM Elements
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const filterForm = document.getElementById('filterForm');
+        const searchInput = document.getElementById('searchInput');
+        const statusSelect = document.getElementById('statusSelect');
+        const refreshBtn = document.getElementById('refreshOrdersBtn');
+        const exportBtn = document.getElementById('exportOrdersBtn');
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        const bulkActions = document.getElementById('bulkActions');
+        const selectedCountSpan = document.getElementById('selectedCount');
+        
+        let selectedOrders = new Set();
+        
+        // Show/hide loading overlay
+        function showLoading() {
+            loadingOverlay.classList.add('active');
+        }
+        
+        function hideLoading() {
+            loadingOverlay.classList.remove('active');
+        }
+        
+        // Debounce function for search input
+        let debounceTimeout;
+        function debounce(func, delay) {
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(func, delay);
+        }
+        
+        // Auto-submit form on search/status change
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                debounce(() => {
+                    filterForm.submit();
+                }, 500);
+            });
+        }
+        
+        if (statusSelect) {
+            statusSelect.addEventListener('change', function() {
+                filterForm.submit();
+            });
+        }
+        
+        // Refresh button
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                showLoading();
+                setTimeout(() => {
+                    filterForm.submit();
+                }, 200);
+            });
+        }
+        
+        // Export orders
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => {
+                exportOrders();
+            });
+        }
+        
+        function exportOrders() {
+            showLoading();
+            
+            // Collect current filter values
+            const params = new URLSearchParams(window.location.search);
+            const exportUrl = `{% url 'control:orders_list' %}?export=csv&${params.toString()}`;
+            
+            window.location.href = exportUrl;
+            setTimeout(() => {
+                hideLoading();
+            }, 1000);
+        }
+        
+        // Update order status via AJAX
+        window.updateOrderStatus = function(orderId, newStatus) {
+            if (!confirm(`Change order #${orderId} status to ${newStatus}?`)) return;
+            
+            showLoading();
+            
+            fetch(`/control/orders/${orderId}/update-status/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ status: newStatus })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('success', `Order #${orderId} updated to ${newStatus}`);
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    showToast('error', data.error || 'Failed to update status');
+                    hideLoading();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('error', 'Network error occurred');
+                hideLoading();
+            });
+        };
+        
+        // Bulk update status
+        window.bulkUpdateStatus = function(newStatus) {
+            if (selectedOrders.size === 0) {
+                showToast('warning', 'No orders selected');
+                return;
+            }
+            
+            if (!confirm(`Update ${selectedOrders.size} order(s) to ${newStatus}?`)) return;
+            
+            showLoading();
+            
+            fetch(`/control/orders/bulk-update/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ 
+                    order_ids: Array.from(selectedOrders),
+                    status: newStatus 
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('success', `${data.updated_count} order(s) updated to ${newStatus}`);
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    showToast('error', data.error || 'Bulk update failed');
+                    hideLoading();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('error', 'Network error occurred');
+                hideLoading();
+            });
+        };
+        
+        // Clear selection
+        window.clearSelection = function() {
+            selectedOrders.clear();
+            updateBulkActions();
+            
+            document.querySelectorAll('.order-select').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = false;
+            }
+        };
+        
+        // Update bulk actions UI
+        function updateBulkActions() {
+            const count = selectedOrders.size;
+            
+            if (selectedCountSpan) {
+                selectedCountSpan.textContent = count;
+            }
+            
+            if (bulkActions) {
+                if (count > 0) {
+                    bulkActions.classList.add('active');
+                } else {
+                    bulkActions.classList.remove('active');
+                }
+            }
+        }
+        
+        // Handle individual order selection
+        function initOrderSelection() {
+            const checkboxes = document.querySelectorAll('.order-select');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const orderId = this.value;
+                    
+                    if (this.checked) {
+                        selectedOrders.add(orderId);
+                    } else {
+                        selectedOrders.delete(orderId);
+                    }
+                    
+                    updateBulkActions();
+                    
+                    // Update select all checkbox
+                    if (selectAllCheckbox) {
+                        const allChecked = checkboxes.length === selectedOrders.size;
+                        selectAllCheckbox.checked = allChecked;
+                    }
+                });
+            });
+        }
+        
+        // Select all functionality
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                const checkboxes = document.querySelectorAll('.order-select');
+                
+                if (this.checked) {
+                    checkboxes.forEach(checkbox => {
+                        checkbox.checked = true;
+                        selectedOrders.add(checkbox.value);
+                    });
+                } else {
+                    checkboxes.forEach(checkbox => {
+                        checkbox.checked = false;
+                        selectedOrders.clear();
+                    });
+                }
+                
+                updateBulkActions();
+            });
+        }
+        
+        // Make rows clickable (except for checkboxes and dropdowns)
+        function makeRowsClickable() {
+            const rows = document.querySelectorAll('.order-row');
+            rows.forEach(row => {
+                row.addEventListener('click', function(e) {
+                    // Don't navigate if clicking on checkbox, dropdown, or action buttons
+                    if (e.target.type === 'checkbox' || 
+                        e.target.closest('.dropdown') || 
+                        e.target.closest('.btn')) {
+                        return;
+                    }
+                    
+                    const orderLink = this.querySelector('.order-id-link');
+                    if (orderLink) {
+                        window.location.href = orderLink.href;
+                    }
+                });
+            });
+        }
+        
+        // Get CSRF token from cookies
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Show toast notification
+        function showToast(type, message) {
+            const toast = document.createElement('div');
+            toast.className = 'position-fixed bottom-0 end-0 m-3';
+            toast.style.zIndex = '9999';
+            
+            let icon = 'bi-info-circle';
+            let bgColor = 'var(--surface)';
+            
+            if (type === 'success') {
+                icon = 'bi-check2-circle';
+                bgColor = 'rgba(30, 50, 30, 0.95)';
+            } else if (type === 'error') {
+                icon = 'bi-exclamation-triangle';
+                bgColor = 'rgba(50, 20, 20, 0.95)';
+            } else if (type === 'warning') {
+                icon = 'bi-exclamation-circle';
+                bgColor = 'rgba(50, 40, 10, 0.95)';
+            }
+            
+            toast.innerHTML = `
+                <div style="background: ${bgColor}; border: 1px solid var(--gold-border); border-radius: 12px; padding: 0.75rem 1rem; backdrop-filter: blur(10px);">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi ${icon}" style="color: var(--gold);"></i>
+                        <span class="small">${message}</span>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        // Keyboard shortcuts
+        function initKeyboardShortcuts() {
+            document.addEventListener('keydown', function(e) {
+                // Ctrl/Cmd + F to focus search
+                if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                    e.preventDefault();
+                    if (searchInput) {
+                        searchInput.focus();
+                    }
+                }
+                
+                // Ctrl/Cmd + R to refresh
+                if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+                    e.preventDefault();
+                    if (refreshBtn) {
+                        refreshBtn.click();
+                    }
+                }
+                
+                // Escape to clear selection
+                if (e.key === 'Escape') {
+                    clearSelection();
+                }
+            });
+        }
+        
+        // Save filter preferences to localStorage
+        function saveFilterPreferences() {
+            const currentFilters = {
+                q: searchInput?.value || '',
+                status: statusSelect?.value || '',
+                dateRange: document.getElementById('dateRangeSelect')?.value || ''
+            };
+            
+            localStorage.setItem('ordersFilters', JSON.stringify(currentFilters));
+        }
+        
+        // Load filter preferences
+        function loadFilterPreferences() {
+            const saved = localStorage.getItem('ordersFilters');
+            if (saved) {
+                const filters = JSON.parse(saved);
+                // Optionally restore filters (commented out to avoid auto-apply)
+                console.log('Saved filters:', filters);
+            }
+        }
+        
+        // Date range handler
+        function handleDateRange() {
+            const dateRangeSelect = document.getElementById('dateRangeSelect');
+            if (dateRangeSelect && dateRangeSelect.value) {
+                // Add hidden input for date range
+                const dateRangeInput = document.createElement('input');
+                dateRangeInput.type = 'hidden';
+                dateRangeInput.name = 'date_range';
+                dateRangeInput.value = dateRangeSelect.value;
+                filterForm.appendChild(dateRangeInput);
+            }
+        }
+        
+        // Initialize everything
+        function init() {
+            initOrderSelection();
+            makeRowsClickable();
+            initKeyboardShortcuts();
+            loadFilterPreferences();
+            
+            // Save filters on form submit
+            if (filterForm) {
+                filterForm.addEventListener('submit', () => {
+                    saveFilterPreferences();
+                    handleDateRange();
+                });
+            }
+            
+            // Auto-refresh option (disabled by default)
+            // setInterval(() => { if (refreshBtn) refreshBtn.click(); }, 30000);
+        }
+        
+        // Run when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+        
+    })();
+</script>
 {% endblock %}

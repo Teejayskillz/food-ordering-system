@@ -1,45 +1,853 @@
-<h1>Wallet Top-ups</h1>
+{% extends "control/base.html" %}
+{% load static %}
 
-<p>
-    <a href="{% url 'control:dashboard' %}">← Dashboard</a> |
-    <a href="{% url 'control:wallet_transactions' %}">View Transactions →</a>
-</p>
+{% block title %}Wallet Top-ups · Saveur Admin{% endblock %}
 
-<p>
-    Filter:
-    <a href="{% url 'control:topups_list' %}">All</a> |
-    <a href="{% url 'control:topups_list' %}?status=pending">Pending</a> |
-    <a href="{% url 'control:topups_list' %}?status=approved">Approved</a> |
-    <a href="{% url 'control:topups_list' %}?status=rejected">Rejected</a>
-</p>
+{% block extra_head %}
+<style>
+    /* Top-ups page specific styles */
+    .filter-section {
+        background: var(--cream-04);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .filter-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    
+    .filter-label-badge {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--cream-40);
+        margin-right: 0.5rem;
+    }
+    
+    .filter-btn {
+        padding: 0.4rem 1rem;
+        border-radius: 100px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    
+    .filter-btn-all {
+        background: var(--cream-08);
+        border: 1px solid var(--border);
+        color: var(--cream-60);
+    }
+    
+    .filter-btn-all:hover, .filter-btn-all.active {
+        background: var(--gold-dim);
+        border-color: var(--gold);
+        color: var(--gold);
+    }
+    
+    .filter-btn-pending {
+        background: rgba(200, 170, 110, 0.1);
+        border: 1px solid rgba(200, 170, 110, 0.3);
+        color: var(--gold);
+    }
+    
+    .filter-btn-pending:hover, .filter-btn-pending.active {
+        background: rgba(200, 170, 110, 0.2);
+        border-color: var(--gold);
+        color: var(--gold-light);
+    }
+    
+    .filter-btn-approved {
+        background: rgba(100, 200, 100, 0.1);
+        border: 1px solid rgba(100, 200, 100, 0.3);
+        color: #8fdf8f;
+    }
+    
+    .filter-btn-approved:hover, .filter-btn-approved.active {
+        background: rgba(100, 200, 100, 0.2);
+        border-color: #8fdf8f;
+        color: #a5e8a5;
+    }
+    
+    .filter-btn-rejected {
+        background: rgba(200, 100, 100, 0.1);
+        border: 1px solid rgba(200, 100, 100, 0.3);
+        color: #e0a0a0;
+    }
+    
+    .filter-btn-rejected:hover, .filter-btn-rejected.active {
+        background: rgba(200, 100, 100, 0.2);
+        border-color: #e0a0a0;
+        color: #f0b0b0;
+    }
+    
+    /* Stats cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-card-topup {
+        background: var(--cream-04);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1rem;
+        transition: all 0.2s ease;
+    }
+    
+    .stat-card-topup:hover {
+        border-color: var(--gold-border);
+        transform: translateY(-2px);
+    }
+    
+    .stat-title-topup {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--cream-40);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    
+    .stat-value-topup {
+        font-family: var(--font-display);
+        font-size: 1.5rem;
+        font-weight: 400;
+        color: var(--gold);
+        line-height: 1.2;
+    }
+    
+    .stat-change {
+        font-size: 0.7rem;
+        margin-top: 0.5rem;
+        color: var(--cream-40);
+    }
+    
+    /* Top-ups table */
+    .topups-table {
+        margin-bottom: 0;
+        width: 100%;
+        background: transparent;
+    }
+    
+    .topups-table thead th {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--gold) !important;
+        border-bottom: 1px solid var(--border);
+        padding: 1rem 0.75rem;
+        background: var(--cream-08);
+        font-weight: 600;
+    }
+    
+    .topups-table tbody td {
+        padding: 1rem 0.75rem;
+        border-bottom: 1px solid var(--border);
+        color: var(--cream-60) !important;
+        vertical-align: middle;
+        background: transparent;
+    }
+    
+    .topups-table tbody tr {
+        transition: all 0.2s ease;
+        background: transparent;
+    }
+    
+    .topups-table tbody tr:hover {
+        background: var(--cream-08);
+    }
+    
+    .topups-table tbody tr:hover td {
+        color: var(--cream) !important;
+    }
+    
+    /* Status badges */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.3rem 0.8rem;
+        border-radius: 100px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .status-pending {
+        background: rgba(200, 170, 110, 0.15);
+        color: var(--gold) !important;
+        border: 1px solid rgba(200, 170, 110, 0.3);
+    }
+    
+    .status-approved {
+        background: rgba(100, 200, 100, 0.15);
+        color: #8fdf8f !important;
+        border: 1px solid rgba(100, 200, 100, 0.3);
+    }
+    
+    .status-rejected {
+        background: rgba(200, 100, 100, 0.15);
+        color: #e0a0a0 !important;
+        border: 1px solid rgba(200, 100, 100, 0.3);
+    }
+    
+    /* Amount styling */
+    .amount-positive {
+        color: var(--gold) !important;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    
+    /* Reference copy button */
+    .ref-container {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .ref-text {
+        font-family: monospace;
+        font-size: 0.75rem;
+        color: var(--cream-60);
+        background: var(--cream-08);
+        padding: 0.2rem 0.5rem;
+        border-radius: 6px;
+    }
+    
+    .copy-ref-btn {
+        background: transparent;
+        border: none;
+        color: var(--cream-40);
+        cursor: pointer;
+        transition: color 0.2s;
+        padding: 0;
+        font-size: 0.8rem;
+    }
+    
+    .copy-ref-btn:hover {
+        color: var(--gold);
+    }
+    
+    /* Action buttons */
+    .action-buttons-topup {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+    }
+    
+    .btn-review {
+        padding: 0.3rem 0.8rem;
+        font-size: 0.7rem;
+        border-radius: 100px;
+        background: var(--gold-dim);
+        border: 1px solid var(--gold-border);
+        color: var(--gold);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    
+    .btn-review:hover {
+        background: var(--gold);
+        color: var(--obsidian);
+    }
+    
+    /* Quick actions card */
+    .quick-actions-card {
+        background: var(--cream-04);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 1.25rem;
+    }
+    
+    /* Pagination */
+    .pagination-custom {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 1.5rem;
+    }
+    
+    .page-link-custom {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.4rem 0.9rem;
+        background: var(--cream-04);
+        border: 1px solid var(--border);
+        color: var(--cream-60);
+        text-decoration: none;
+        border-radius: 100px;
+        font-size: 0.8rem;
+        transition: all 0.2s ease;
+    }
+    
+    .page-link-custom:hover {
+        background: var(--gold-dim);
+        border-color: var(--gold);
+        color: var(--gold);
+    }
+    
+    .page-link-custom.active {
+        background: var(--gold);
+        border-color: var(--gold);
+        color: var(--obsidian);
+    }
+    
+    .page-link-custom.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+    
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--cream-40);
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+    
+    /* Loading overlay */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(14, 12, 10, 0.8);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .loading-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .spinner-custom {
+        width: 50px;
+        height: 50px;
+        border: 3px solid var(--cream-08);
+        border-top-color: var(--gold);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .action-buttons-topup {
+            flex-direction: column;
+        }
+        
+        .ref-text {
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    }
+    
+    .detail-card {
+        background: var(--cream-04);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    
+    .clear-filters {
+        color: var(--cream-40);
+        text-decoration: none;
+        font-size: 0.75rem;
+        transition: color 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    
+    .clear-filters:hover {
+        color: var(--gold);
+    }
+</style>
+{% endblock %}
 
-<table border="1" cellpadding="8" cellspacing="0">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>User</th>
-            <th>Amount</th>
-            <th>Status</th>
-            <th>Reference</th>
-            <th>Created</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for t in topups %}
-        <tr>
-            <td>#{{ t.id }}</td>
-            <td>{{ t.user }}</td>
-            <td>₦{{ t.amount }}</td>
-            <td>{{ t.status }}</td>
-            <td>{{ t.reference }}</td>
-            <td>{{ t.created_at }}</td>
-            <td><a href="{% url 'control:topup_review' t.id %}">Review</a></td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="7">No top-ups found.</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+{% block panel_title %}Wallet Top-ups{% endblock %}
+{% block panel_subtitle %}Manage wallet funding requests{% endblock %}
+
+{% block action_buttons %}
+<div class="d-flex gap-2">
+    <a href="{% url 'control:wallet_transactions' %}" class="btn-outline-gold">
+        <i class="bi bi-arrow-left-right me-1"></i> Transactions
+    </a>
+    <a href="{% url 'control:dashboard' %}" class="btn-outline-gold">
+        <i class="bi bi-speedometer2 me-1"></i> Dashboard
+    </a>
+    <button class="btn-outline-gold" id="refreshTopupsBtn">
+        <i class="bi bi-arrow-repeat me-1"></i> Refresh
+    </button>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card-topup">
+        <div class="stat-title-topup">
+            <i class="bi bi-wallet2"></i> Total Top-ups
+        </div>
+        <div class="stat-value-topup">₦{{ total_amount|default:"0"|floatformat:0 }}</div>
+        <div class="stat-change">{{ total_count|default:"0" }} requests</div>
+    </div>
+    
+    <div class="stat-card-topup">
+        <div class="stat-title-topup">
+            <i class="bi bi-clock-history"></i> Pending
+        </div>
+        <div class="stat-value-topup" style="color: var(--gold);">₦{{ pending_amount|default:"0"|floatformat:0 }}</div>
+        <div class="stat-change">{{ pending_count|default:"0" }} waiting</div>
+    </div>
+    
+    <div class="stat-card-topup">
+        <div class="stat-title-topup">
+            <i class="bi bi-check2-circle"></i> Approved
+        </div>
+        <div class="stat-value-topup" style="color: #8fdf8f;">₦{{ approved_amount|default:"0"|floatformat:0 }}</div>
+        <div class="stat-change">{{ approved_count|default:"0" }} completed</div>
+    </div>
+    
+    <div class="stat-card-topup">
+        <div class="stat-title-topup">
+            <i class="bi bi-x-circle"></i> Rejected
+        </div>
+        <div class="stat-value-topup" style="color: #e0a0a0;">₦{{ rejected_amount|default:"0"|floatformat:0 }}</div>
+        <div class="stat-change">{{ rejected_count|default:"0" }} declined</div>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="filter-section">
+    <div class="filter-buttons">
+        <span class="filter-label-badge">
+            <i class="bi bi-funnel me-1"></i> Filter by status:
+        </span>
+        
+        <a href="{% url 'control:topups_list' %}" 
+           class="filter-btn filter-btn-all {% if not current_status %}active{% endif %}">
+            <i class="bi bi-grid-3x3-gap-fill"></i> All
+        </a>
+        
+        <a href="{% url 'control:topups_list' %}?status=pending" 
+           class="filter-btn filter-btn-pending {% if current_status == 'pending' %}active{% endif %}">
+            <i class="bi bi-clock"></i> Pending
+            {% if pending_count > 0 %}
+            <span class="badge" style="background: var(--gold); color: var(--obsidian); font-size: 0.65rem;">{{ pending_count }}</span>
+            {% endif %}
+        </a>
+        
+        <a href="{% url 'control:topups_list' %}?status=approved" 
+           class="filter-btn filter-btn-approved {% if current_status == 'approved' %}active{% endif %}">
+            <i class="bi bi-check2-circle"></i> Approved
+        </a>
+        
+        <a href="{% url 'control:topups_list' %}?status=rejected" 
+           class="filter-btn filter-btn-rejected {% if current_status == 'rejected' %}active{% endif %}">
+            <i class="bi bi-x-circle"></i> Rejected
+        </a>
+        
+        {% if current_status %}
+        <a href="{% url 'control:topups_list' %}" class="clear-filters ms-2">
+            <i class="bi bi-x-circle"></i> Clear
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Top-ups Table -->
+    <div class="col-12 col-lg-9">
+        <div class="detail-card overflow-hidden">
+            <div class="table-responsive">
+                <table class="topups-table table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User</th>
+                            <th class="text-end">Amount</th>
+                            <th>Status</th>
+                            <th>Reference</th>
+                            <th>Created</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="topupsTableBody">
+                        {% for t in topups %}
+                        <tr data-topup-id="{{ t.id }}" data-status="{{ t.status }}">
+                            <td style="background: transparent;">
+                                <span class="fw-bold" style="color: var(--gold);">#{{ t.id }}</span>
+                            </td>
+                            <td style="background: transparent;">
+                                <div style="font-weight: 500; color: var(--cream);">{{ t.user.get_full_name|default:t.user.username }}</div>
+                                <small class="text-cream-40">{{ t.user.email }}</small>
+                            </td>
+                            <td class="text-end" style="background: transparent;">
+                                <span class="amount-positive">₦{{ t.amount|floatformat:0 }}</span>
+                            </td>
+                            <td style="background: transparent;">
+                                {% if t.status == "pending" %}
+                                <span class="status-badge status-pending">
+                                    <i class="bi bi-clock"></i> Pending
+                                </span>
+                                {% elif t.status == "approved" %}
+                                <span class="status-badge status-approved">
+                                    <i class="bi bi-check2-circle"></i> Approved
+                                </span>
+                                {% elif t.status == "rejected" %}
+                                <span class="status-badge status-rejected">
+                                    <i class="bi bi-x-circle"></i> Rejected
+                                </span>
+                                {% else %}
+                                <span class="status-badge">{{ t.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td style="background: transparent;">
+                                <div class="ref-container">
+                                    <code class="ref-text">{{ t.reference|default:"—"|truncatechars:12 }}</code>
+                                    {% if t.reference %}
+                                    <button class="copy-ref-btn" onclick="copyToClipboard('{{ t.reference }}')" title="Copy reference">
+                                        <i class="bi bi-files"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td style="background: transparent;">
+                                <div>
+                                    <span style="color: var(--cream-40); font-size: 0.75rem;">{{ t.created_at|date:"M d, Y" }}</span>
+                                    <br>
+                                    <small class="text-cream-40">{{ t.created_at|time:"g:i A" }}</small>
+                                </div>
+                            </td>
+                            <td class="text-end" style="background: transparent;">
+                                <div class="action-buttons-topup">
+                                    <!-- FIXED: Using correct URL name 'topup_review' -->
+                                    <a href="{% url 'control:topup_review' t.id %}" class="btn-review">
+                                        <i class="bi bi-eye"></i> Review
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7">
+                                <div class="empty-state">
+                                    <i class="bi bi-wallet2"></i>
+                                    <div class="mt-2" style="color: var(--cream-60);">No top-up requests found</div>
+                                    <small class="text-cream-40">When customers request wallet funding, they'll appear here</small>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Pagination -->
+        {% if page_obj and page_obj.has_other_pages %}
+        <div class="pagination-custom">
+            {% if page_obj.has_previous %}
+                <a class="page-link-custom" href="?page={{ page_obj.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}">
+                    <i class="bi bi-chevron-left"></i> Previous
+                </a>
+            {% else %}
+                <span class="page-link-custom disabled">
+                    <i class="bi bi-chevron-left"></i> Previous
+                </span>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+                {% if num == page_obj.number %}
+                    <span class="page-link-custom active">{{ num }}</span>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <a class="page-link-custom" href="?page={{ num }}{% if current_status %}&status={{ current_status }}{% endif %}">
+                        {{ num }}
+                    </a>
+                {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+                <a class="page-link-custom" href="?page={{ page_obj.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}">
+                    Next <i class="bi bi-chevron-right"></i>
+                </a>
+            {% else %}
+                <span class="page-link-custom disabled">
+                    Next <i class="bi bi-chevron-right"></i>
+                </span>
+            {% endif %}
+        </div>
+        <div class="text-center mt-2">
+            <small class="text-cream-40">
+                Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }} top-ups
+            </small>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Quick Actions Sidebar -->
+    <div class="col-12 col-lg-3">
+        <div class="quick-actions-card">
+            <h5 class="mb-3" style="font-family: var(--font-display); color: var(--gold);">
+                <i class="bi bi-lightning-charge me-2"></i>Quick Actions
+            </h5>
+            
+            <div class="d-flex flex-column gap-3">
+                <div>
+                    <div class="filter-label mb-2">Pending Review</div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="status-badge status-pending">
+                            <i class="bi bi-clock"></i> {{ pending_count|default:"0" }} pending
+                        </span>
+                        <a href="{% url 'control:topups_list' %}?status=pending" class="btn-review">
+                            Review Now
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="border-top" style="border-color: var(--border);"></div>
+                
+                <div>
+                    <div class="filter-label mb-2">This Week</div>
+                    <div class="stat-value-topup" style="font-size: 1.2rem;">₦{{ week_amount|default:"0"|floatformat:0 }}</div>
+                    <div class="stat-change">{{ week_count|default:"0" }} requests</div>
+                </div>
+                
+                <div class="border-top" style="border-color: var(--border);"></div>
+                
+                <div>
+                    <div class="filter-label mb-2">Average Top-up</div>
+                    <div class="stat-value-topup" style="font-size: 1.2rem;">₦{{ avg_amount|default:"0"|floatformat:0 }}</div>
+                    <div class="stat-change">per request</div>
+                </div>
+                
+                <div class="border-top" style="border-color: var(--border);"></div>
+                
+                <div>
+                    <button class="btn-outline-gold w-100" onclick="exportTopups()">
+                        <i class="bi bi-download me-1"></i> Export Data
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Info Card -->
+        <div class="detail-card p-4 mt-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <i class="bi bi-info-circle-fill" style="color: var(--gold);"></i>
+                <h6 class="mb-0" style="color: var(--cream);">How it works</h6>
+            </div>
+            <ul class="small" style="color: var(--cream-60); padding-left: 1.25rem;">
+                <li>Customers request wallet top-ups</li>
+                <li>Review payment proof in details</li>
+                <li>Approve to add funds to wallet</li>
+                <li>Reject with reason if needed</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-custom"></div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Top-ups page JavaScript
+    (function() {
+        'use strict';
+        
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const refreshBtn = document.getElementById('refreshTopupsBtn');
+        
+        // Show/hide loading
+        function showLoading() {
+            if (loadingOverlay) loadingOverlay.classList.add('active');
+        }
+        
+        function hideLoading() {
+            if (loadingOverlay) loadingOverlay.classList.remove('active');
+        }
+        
+        // Refresh button
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                showLoading();
+                setTimeout(() => {
+                    window.location.reload();
+                }, 200);
+            });
+        }
+        
+        // Show toast notification
+        function showToast(type, message) {
+            const toast = document.createElement('div');
+            toast.className = 'position-fixed bottom-0 end-0 m-3';
+            toast.style.zIndex = '9999';
+            
+            let icon = 'bi-info-circle';
+            let bgColor = 'var(--surface)';
+            
+            if (type === 'success') {
+                icon = 'bi-check2-circle';
+                bgColor = 'rgba(30, 50, 30, 0.95)';
+            } else if (type === 'error') {
+                icon = 'bi-exclamation-triangle';
+                bgColor = 'rgba(50, 20, 20, 0.95)';
+            } else if (type === 'warning') {
+                icon = 'bi-exclamation-circle';
+                bgColor = 'rgba(50, 40, 10, 0.95)';
+            }
+            
+            toast.innerHTML = `
+                <div style="background: ${bgColor}; border: 1px solid var(--gold-border); border-radius: 12px; padding: 0.75rem 1rem; backdrop-filter: blur(10px);">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi ${icon}" style="color: var(--gold);"></i>
+                        <span class="small" style="color: var(--cream);">${message}</span>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        // Copy to clipboard
+        window.copyToClipboard = function(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('success', 'Reference copied to clipboard');
+            }).catch(() => {
+                showToast('error', 'Failed to copy');
+            });
+        };
+        
+        // Export topups
+        window.exportTopups = function() {
+            showLoading();
+            
+            const currentStatus = '{{ current_status }}';
+            let url = '/control/topups/export/';
+            if (currentStatus) {
+                url += `?status=${currentStatus}`;
+            }
+            
+            // Simulate export - replace with actual endpoint
+            setTimeout(() => {
+                hideLoading();
+                showToast('success', 'Export started. Check your downloads folder.');
+            }, 1000);
+        };
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + R to refresh
+            if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+                e.preventDefault();
+                if (refreshBtn) refreshBtn.click();
+            }
+            
+            // Press 'P' to filter pending
+            if (e.key === 'p' || e.key === 'P') {
+                const pendingLink = document.querySelector('.filter-btn-pending');
+                if (pendingLink) {
+                    window.location.href = pendingLink.href;
+                }
+            }
+            
+            // Press 'A' to filter approved
+            if (e.key === 'a' || e.key === 'A') {
+                const approvedLink = document.querySelector('.filter-btn-approved');
+                if (approvedLink) {
+                    window.location.href = approvedLink.href;
+                }
+            }
+            
+            // Press 'R' to filter rejected
+            if (e.key === 'r' || e.key === 'R') {
+                const rejectedLink = document.querySelector('.filter-btn-rejected');
+                if (rejectedLink) {
+                    window.location.href = rejectedLink.href;
+                }
+            }
+        });
+        
+        // Highlight active filter
+        function highlightActiveFilter() {
+            const currentStatus = '{{ current_status }}';
+            const filters = document.querySelectorAll('.filter-btn');
+            
+            filters.forEach(filter => {
+                filter.classList.remove('active');
+                if (currentStatus === 'pending' && filter.classList.contains('filter-btn-pending')) {
+                    filter.classList.add('active');
+                } else if (currentStatus === 'approved' && filter.classList.contains('filter-btn-approved')) {
+                    filter.classList.add('active');
+                } else if (currentStatus === 'rejected' && filter.classList.contains('filter-btn-rejected')) {
+                    filter.classList.add('active');
+                } else if (!currentStatus && filter.classList.contains('filter-btn-all')) {
+                    filter.classList.add('active');
+                }
+            });
+        }
+        
+        // Initialize
+        function init() {
+            highlightActiveFilter();
+        }
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+        
+    })();
+</script>
+{% endblock %}

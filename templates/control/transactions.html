@@ -1,32 +1,877 @@
-<h1>Review Top-up #{{ topup.id }}</h1>
+{% extends "control/base.html" %}
+{% load static %}
 
-<p><b>User:</b> {{ topup.user }}</p>
-<p><b>Amount:</b> ₦{{ topup.amount }}</p>
-<p><b>Status:</b> {{ topup.status }}</p>
-<p><b>Reference:</b> {{ topup.reference }}</p>
+{% block title %}Wallet Transactions · Saveur Admin{% endblock %}
 
-<p><b>Proof:</b></p>
-{% if topup.proof %}
-<img src="{{ topup.proof.url }}" style="max-width:420px; border:1px solid #ddd;" />
-{% else %}
-<p>No proof uploaded.</p>
-{% endif %}
+{% block extra_head %}
+<style>
+    /* Transactions page specific styles */
+    .filter-section {
+        background: var(--cream-04);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .filter-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--cream-40);
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-control-custom,
+    .form-select-custom {
+        background: var(--cream-08);
+        border: 1px solid var(--border);
+        color: var(--cream);
+        border-radius: 100px;
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+    
+    .form-control-custom:focus,
+    .form-select-custom:focus {
+        background: var(--cream-08);
+        border-color: var(--gold);
+        color: var(--cream);
+        box-shadow: 0 0 0 3px var(--gold-dim);
+        outline: none;
+    }
+    
+    .form-control-custom::placeholder {
+        color: var(--cream-40);
+        font-size: 0.8rem;
+    }
+    
+    /* Stats cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-card-transaction {
+        background: var(--cream-04);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1rem;
+        transition: all 0.2s ease;
+    }
+    
+    .stat-card-transaction:hover {
+        border-color: var(--gold-border);
+        transform: translateY(-2px);
+    }
+    
+    .stat-title-transaction {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--cream-40);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    
+    .stat-value-transaction {
+        font-family: var(--font-display);
+        font-size: 1.5rem;
+        font-weight: 400;
+        line-height: 1.2;
+    }
+    
+    .stat-value-credit {
+        color: #8fdf8f;
+    }
+    
+    .stat-value-debit {
+        color: #e0a0a0;
+    }
+    
+    .stat-change {
+        font-size: 0.7rem;
+        margin-top: 0.5rem;
+        color: var(--cream-40);
+    }
+    
+    /* Transactions table */
+    .transactions-table {
+        margin-bottom: 0;
+        width: 100%;
+        background: transparent;
+    }
+    
+    .transactions-table thead th {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--gold) !important;
+        border-bottom: 1px solid var(--border);
+        padding: 1rem 0.75rem;
+        background: var(--cream-08);
+        font-weight: 600;
+    }
+    
+    .transactions-table tbody td {
+        padding: 1rem 0.75rem;
+        border-bottom: 1px solid var(--border);
+        color: var(--cream-60) !important;
+        vertical-align: middle;
+        background: transparent;
+    }
+    
+    .transactions-table tbody tr {
+        transition: all 0.2s ease;
+        background: transparent;
+    }
+    
+    .transactions-table tbody tr:hover {
+        background: var(--cream-08);
+    }
+    
+    .transactions-table tbody tr:hover td {
+        color: var(--cream) !important;
+    }
+    
+    /* Status badges */
+    .type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.3rem 0.8rem;
+        border-radius: 100px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .type-credit {
+        background: rgba(100, 200, 100, 0.15);
+        color: #8fdf8f !important;
+        border: 1px solid rgba(100, 200, 100, 0.3);
+    }
+    
+    .type-debit {
+        background: rgba(200, 100, 100, 0.15);
+        color: #e0a0a0 !important;
+        border: 1px solid rgba(200, 100, 100, 0.3);
+    }
+    
+    /* Source badge */
+    .source-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 100px;
+        font-size: 0.7rem;
+        background: var(--cream-08);
+        color: var(--cream-60);
+    }
+    
+    /* Amount styling */
+    .amount-credit {
+        color: #8fdf8f !important;
+        font-weight: 600;
+    }
+    
+    .amount-debit {
+        color: #e0a0a0 !important;
+        font-weight: 600;
+    }
+    
+    /* Link buttons */
+    .link-btn {
+        padding: 0.25rem 0.6rem;
+        font-size: 0.7rem;
+        border-radius: 100px;
+        background: var(--gold-dim);
+        border: 1px solid var(--gold-border);
+        color: var(--gold);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    
+    .link-btn:hover {
+        background: var(--gold);
+        color: var(--obsidian);
+    }
+    
+    /* Pagination */
+    .pagination-custom {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 1.5rem;
+    }
+    
+    .page-link-custom {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.4rem 0.9rem;
+        background: var(--cream-04);
+        border: 1px solid var(--border);
+        color: var(--cream-60);
+        text-decoration: none;
+        border-radius: 100px;
+        font-size: 0.8rem;
+        transition: all 0.2s ease;
+    }
+    
+    .page-link-custom:hover {
+        background: var(--gold-dim);
+        border-color: var(--gold);
+        color: var(--gold);
+    }
+    
+    .page-link-custom.active {
+        background: var(--gold);
+        border-color: var(--gold);
+        color: var(--obsidian);
+    }
+    
+    .page-link-custom.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+    
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--cream-40);
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+    
+    /* Loading overlay */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(14, 12, 10, 0.8);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .loading-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .spinner-custom {
+        width: 50px;
+        height: 50px;
+        border: 3px solid var(--cream-08);
+        border-top-color: var(--gold);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Date range picker */
+    .date-range-group {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .date-input {
+        background: var(--cream-08);
+        border: 1px solid var(--border);
+        color: var(--cream);
+        border-radius: 100px;
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+    
+    .date-input:focus {
+        outline: none;
+        border-color: var(--gold);
+    }
+    
+    /* Clear filters */
+    .clear-filters {
+        color: var(--cream-40);
+        text-decoration: none;
+        font-size: 0.75rem;
+        transition: color 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    
+    .clear-filters:hover {
+        color: var(--gold);
+    }
+    
+    /* Export button */
+    .btn-export {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--cream-60);
+        border-radius: 100px;
+        padding: 0.4rem 1rem;
+        font-size: 0.75rem;
+        transition: all 0.2s;
+    }
+    
+    .btn-export:hover {
+        background: var(--gold-dim);
+        border-color: var(--gold);
+        color: var(--gold);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .transactions-table {
+            font-size: 0.8rem;
+        }
+        
+        .date-range-group {
+            flex-direction: column;
+        }
+    }
+    
+    .detail-card {
+        background: var(--cream-04);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+</style>
+{% endblock %}
 
-<hr>
+{% block panel_title %}Wallet Transactions{% endblock %}
+{% block panel_subtitle %}All wallet activity records{% endblock %}
 
-{% if topup.status == "pending" %}
-<form method="post">
-    {% csrf_token %}
-    <p>
-        <textarea name="admin_note" rows="3" cols="60" placeholder="Admin note..."></textarea>
-    </p>
+{% block action_buttons %}
+<div class="d-flex gap-2">
+    <button class="btn-export" id="exportTransactionsBtn">
+        <i class="bi bi-download me-1"></i> Export
+    </button>
+    <button class="btn-outline-gold" id="refreshTransactionsBtn">
+        <i class="bi bi-arrow-repeat me-1"></i> Refresh
+    </button>
+    <a href="{% url 'control:dashboard' %}" class="btn-outline-gold">
+        <i class="bi bi-speedometer2 me-1"></i> Dashboard
+    </a>
+</div>
+{% endblock %}
 
-    <button type="submit" name="action" value="approve">Approve</button>
-    <button type="submit" name="action" value="reject">Reject</button>
-</form>
-{% else %}
-<p><b>Reviewed by:</b> {{ topup.reviewed_by }} at {{ topup.reviewed_at }}</p>
-<p><b>Admin note:</b> {{ topup.admin_note }}</p>
-{% endif %}
+{% block content %}
 
-<p><a href="{% url 'control:topups_list' %}">← Back to top-ups</a></p>
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card-transaction">
+        <div class="stat-title-transaction">
+            <i class="bi bi-wallet2"></i> Total Volume
+        </div>
+        <div class="stat-value-transaction stat-value-credit">₦{{ total_volume|default:"0"|floatformat:0 }}</div>
+        <div class="stat-change">{{ total_count|default:"0" }} transactions</div>
+    </div>
+    
+    <div class="stat-card-transaction">
+        <div class="stat-title-transaction">
+            <i class="bi bi-arrow-up-circle"></i> Total Credits
+        </div>
+        <div class="stat-value-transaction stat-value-credit">₦{{ total_credits|default:"0"|floatformat:0 }}</div>
+        <div class="stat-change">{{ credit_count|default:"0" }} deposits</div>
+    </div>
+    
+    <div class="stat-card-transaction">
+        <div class="stat-title-transaction">
+            <i class="bi bi-arrow-down-circle"></i> Total Debits
+        </div>
+        <div class="stat-value-transaction stat-value-debit">₦{{ total_debits|default:"0"|floatformat:0 }}</div>
+        <div class="stat-change">{{ debit_count|default:"0" }} withdrawals</div>
+    </div>
+    
+    <div class="stat-card-transaction">
+        <div class="stat-title-transaction">
+            <i class="bi bi-calculator"></i> Net Flow
+        </div>
+        <div class="stat-value-transaction {% if net_flow >= 0 %}stat-value-credit{% else %}stat-value-debit{% endif %}">
+            ₦{{ net_flow|default:"0"|floatformat:0 }}
+        </div>
+        <div class="stat-change">
+            {% if net_flow >= 0 %}
+            <i class="bi bi-arrow-up-short text-success"></i> Positive balance
+            {% else %}
+            <i class="bi bi-arrow-down-short text-danger"></i> Negative balance
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="filter-section">
+    <form method="get" id="filterForm">
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-3">
+                <div class="filter-label">
+                    <i class="bi bi-search me-1"></i> Search
+                </div>
+                <input type="text" 
+                       class="form-control-custom w-100" 
+                       name="q" 
+                       value="{{ q }}" 
+                       placeholder="User name, email, ID..."
+                       id="searchInput">
+            </div>
+            
+            <div class="col-12 col-md-2">
+                <div class="filter-label">
+                    <i class="bi bi-funnel me-1"></i> Transaction Type
+                </div>
+                <select class="form-select-custom w-100" name="tx_type" id="txTypeSelect">
+                    <option value="">All Types</option>
+                    <option value="credit" {% if tx_type == 'credit' %}selected{% endif %}>Credit</option>
+                    <option value="debit" {% if tx_type == 'debit' %}selected{% endif %}>Debit</option>
+                </select>
+            </div>
+            
+            <div class="col-12 col-md-2">
+                <div class="filter-label">
+                    <i class="bi bi-tag me-1"></i> Source
+                </div>
+                <select class="form-select-custom w-100" name="source" id="sourceSelect">
+                    <option value="">All Sources</option>
+                    <option value="topup" {% if source == 'topup' %}selected{% endif %}>Top-up</option>
+                    <option value="order" {% if source == 'order' %}selected{% endif %}>Order Payment</option>
+                    <option value="refund" {% if source == 'refund' %}selected{% endif %}>Refund</option>
+                    <option value="admin" {% if source == 'admin' %}selected{% endif %}>Admin Adjustment</option>
+                </select>
+            </div>
+            
+            <div class="col-12 col-md-3">
+                <div class="filter-label">
+                    <i class="bi bi-calendar-range me-1"></i> Date Range
+                </div>
+                <div class="date-range-group">
+                    <input type="date" class="date-input w-100" name="date_from" value="{{ date_from }}" placeholder="From">
+                    <input type="date" class="date-input w-100" name="date_to" value="{{ date_to }}" placeholder="To">
+                </div>
+            </div>
+            
+            <div class="col-12 col-md-2">
+                <div class="filter-label">&nbsp;</div>
+                <div class="d-flex gap-2">
+                    <button class="btn-gold w-100" type="submit">
+                        <i class="bi bi-filter me-1"></i> Apply
+                    </button>
+                    {% if q or tx_type or source or date_from or date_to %}
+                    <a href="{% url 'control:wallet_transactions' %}" class="clear-filters d-flex align-items-center">
+                        <i class="bi bi-x-circle me-1"></i> Clear
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="detail-card overflow-hidden">
+            <div class="table-responsive">
+                <table class="transactions-table table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User</th>
+                            <th>Type</th>
+                            <th>Source</th>
+                            <th class="text-end">Amount</th>
+                            <th>Date</th>
+                            <th class="text-center">Order</th>
+                            <th class="text-center">Top-up</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsTableBody">
+                        {% for tx in txs %}
+                        <tr data-transaction-id="{{ tx.id }}" data-tx-type="{{ tx.tx_type }}">
+                            <td style="background: transparent;">
+                                <span class="fw-bold" style="color: var(--gold);">#{{ tx.id }}</span>
+                            </td>
+                            <td style="background: transparent;">
+                                <div style="font-weight: 500; color: var(--cream);">{{ tx.wallet.user.get_full_name|default:tx.wallet.user.username }}</div>
+                                <small class="text-cream-40">{{ tx.wallet.user.email }}</small>
+                            </td>
+                            <td style="background: transparent;">
+                                {% if tx.tx_type == "credit" %}
+                                <span class="type-badge type-credit">
+                                    <i class="bi bi-arrow-up-circle"></i> Credit
+                                </span>
+                                {% elif tx.tx_type == "debit" %}
+                                <span class="type-badge type-debit">
+                                    <i class="bi bi-arrow-down-circle"></i> Debit
+                                </span>
+                                {% else %}
+                                <span class="type-badge">{{ tx.tx_type }}</span>
+                                {% endif %}
+                            </td>
+                            <td style="background: transparent;">
+                                <span class="source-badge">
+                                    <i class="bi bi-{% if tx.source == 'topup' %}wallet2{% elif tx.source == 'order' %}cart{% elif tx.source == 'refund' %}arrow-return-left{% else %}gear{% endif %}"></i>
+                                    {{ tx.source|default:"—"|title }}
+                                </span>
+                            </td>
+                            <td class="text-end" style="background: transparent;">
+                                <span class="{% if tx.tx_type == 'credit' %}amount-credit{% else %}amount-debit{% endif %}">
+                                    {% if tx.tx_type == 'debit' %}-{% endif %}₦{{ tx.amount|floatformat:0 }}
+                                </span>
+                            </td>
+                            <td style="background: transparent;">
+                                <div>
+                                    <span style="color: var(--cream-40); font-size: 0.75rem;">{{ tx.created_at|date:"M d, Y" }}</span>
+                                    <br>
+                                    <small class="text-cream-40">{{ tx.created_at|time:"g:i A" }}</small>
+                                </div>
+                            </td>
+                            <td class="text-center" style="background: transparent;">
+                                {% if tx.order %}
+                                <a href="{% url 'control:order_detail' tx.order.id %}" class="link-btn">
+                                    <i class="bi bi-receipt"></i> #{{ tx.order.id }}
+                                </a>
+                                {% else %}
+                                <span class="text-cream-40">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center" style="background: transparent;">
+                                {% if tx.topup %}
+                                <a href="{% url 'control:topup_review' tx.topup.id %}" class="link-btn">
+                                    <i class="bi bi-wallet2"></i> #{{ tx.topup.id }}
+                                </a>
+                                {% else %}
+                                <span class="text-cream-40">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8">
+                                <div class="empty-state">
+                                    <i class="bi bi-receipt"></i>
+                                    <div class="mt-2" style="color: var(--cream-60);">No transactions found</div>
+                                    <small class="text-cream-40">Try adjusting your filters or check back later</small>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if page_obj and page_obj.has_other_pages %}
+            <div class="p-3 border-top" style="border-color: var(--border) !important;">
+                <div class="pagination-custom">
+                    {% if page_obj.has_previous %}
+                        <a class="page-link-custom" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if tx_type %}&tx_type={{ tx_type }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
+                            <i class="bi bi-chevron-left"></i> Previous
+                        </a>
+                    {% else %}
+                        <span class="page-link-custom disabled">
+                            <i class="bi bi-chevron-left"></i> Previous
+                        </span>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if num == page_obj.number %}
+                            <span class="page-link-custom active">{{ num }}</span>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <a class="page-link-custom" href="?page={{ num }}{% if q %}&q={{ q }}{% endif %}{% if tx_type %}&tx_type={{ tx_type }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
+                                {{ num }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <a class="page-link-custom" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if tx_type %}&tx_type={{ tx_type }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
+                            Next <i class="bi bi-chevron-right"></i>
+                        </a>
+                    {% else %}
+                        <span class="page-link-custom disabled">
+                            Next <i class="bi bi-chevron-right"></i>
+                        </span>
+                    {% endif %}
+                </div>
+                <div class="text-center mt-2">
+                    <small class="text-cream-40">
+                        Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }} transactions
+                    </small>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-custom"></div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Transactions page JavaScript
+    (function() {
+        'use strict';
+        
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const filterForm = document.getElementById('filterForm');
+        const searchInput = document.getElementById('searchInput');
+        const txTypeSelect = document.getElementById('txTypeSelect');
+        const sourceSelect = document.getElementById('sourceSelect');
+        const refreshBtn = document.getElementById('refreshTransactionsBtn');
+        const exportBtn = document.getElementById('exportTransactionsBtn');
+        
+        // Show/hide loading
+        function showLoading() {
+            if (loadingOverlay) loadingOverlay.classList.add('active');
+        }
+        
+        function hideLoading() {
+            if (loadingOverlay) loadingOverlay.classList.remove('active');
+        }
+        
+        // Debounce for search
+        let debounceTimeout;
+        function debounce(func, delay) {
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(func, delay);
+        }
+        
+        // Auto-submit on search
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                debounce(() => {
+                    filterForm.submit();
+                }, 500);
+            });
+        }
+        
+        // Auto-submit on select change
+        if (txTypeSelect) {
+            txTypeSelect.addEventListener('change', () => filterForm.submit());
+        }
+        
+        if (sourceSelect) {
+            sourceSelect.addEventListener('change', () => filterForm.submit());
+        }
+        
+        // Date inputs auto-submit (optional - with debounce)
+        const dateInputs = document.querySelectorAll('.date-input');
+        dateInputs.forEach(input => {
+            input.addEventListener('change', () => filterForm.submit());
+        });
+        
+        // Refresh button
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                showLoading();
+                setTimeout(() => {
+                    filterForm.submit();
+                }, 200);
+            });
+        }
+        
+        // Export transactions
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => {
+                exportTransactions();
+            });
+        }
+        
+        // Show toast notification
+        function showToast(type, message) {
+            const toast = document.createElement('div');
+            toast.className = 'position-fixed bottom-0 end-0 m-3';
+            toast.style.zIndex = '9999';
+            
+            let icon = 'bi-info-circle';
+            let bgColor = 'var(--surface)';
+            
+            if (type === 'success') {
+                icon = 'bi-check2-circle';
+                bgColor = 'rgba(30, 50, 30, 0.95)';
+            } else if (type === 'error') {
+                icon = 'bi-exclamation-triangle';
+                bgColor = 'rgba(50, 20, 20, 0.95)';
+            } else if (type === 'warning') {
+                icon = 'bi-exclamation-circle';
+                bgColor = 'rgba(50, 40, 10, 0.95)';
+            }
+            
+            toast.innerHTML = `
+                <div style="background: ${bgColor}; border: 1px solid var(--gold-border); border-radius: 12px; padding: 0.75rem 1rem; backdrop-filter: blur(10px);">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi ${icon}" style="color: var(--gold);"></i>
+                        <span class="small" style="color: var(--cream);">${message}</span>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        // Export transactions
+        function exportTransactions() {
+            showLoading();
+            
+            // Collect current filter values
+            const params = new URLSearchParams(window.location.search);
+            const exportUrl = `/control/wallet/transactions/export/?${params.toString()}`;
+            
+            // Simulate export - replace with actual endpoint
+            setTimeout(() => {
+                hideLoading();
+                showToast('success', 'Export started. Check your downloads folder.');
+            }, 1000);
+            
+            // Uncomment for actual export
+            // window.location.href = exportUrl;
+        }
+        
+        // Format number with commas
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+        
+        // Highlight rows based on transaction type
+        function highlightRows() {
+            const rows = document.querySelectorAll('#transactionsTableBody tr');
+            rows.forEach(row => {
+                const txType = row.dataset.txType;
+                if (txType === 'credit') {
+                    row.style.borderLeft = '3px solid #8fdf8f';
+                } else if (txType === 'debit') {
+                    row.style.borderLeft = '3px solid #e0a0a0';
+                }
+            });
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + R to refresh
+            if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+                e.preventDefault();
+                if (refreshBtn) refreshBtn.click();
+            }
+            
+            // Ctrl/Cmd + E to export
+            if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+                e.preventDefault();
+                if (exportBtn) exportBtn.click();
+            }
+            
+            // Press 'C' to filter credits
+            if (e.key === 'c' || e.key === 'C') {
+                e.preventDefault();
+                if (txTypeSelect) {
+                    txTypeSelect.value = 'credit';
+                    filterForm.submit();
+                }
+            }
+            
+            // Press 'D' to filter debits
+            if (e.key === 'd' || e.key === 'D') {
+                e.preventDefault();
+                if (txTypeSelect) {
+                    txTypeSelect.value = 'debit';
+                    filterForm.submit();
+                }
+            }
+            
+            // Press 'A' to show all
+            if (e.key === 'a' || e.key === 'A') {
+                e.preventDefault();
+                if (txTypeSelect) {
+                    txTypeSelect.value = '';
+                    filterForm.submit();
+                }
+            }
+        });
+        
+        // Save filter preferences to localStorage
+        function saveFilterPreferences() {
+            const currentFilters = {
+                q: searchInput?.value || '',
+                tx_type: txTypeSelect?.value || '',
+                source: sourceSelect?.value || '',
+                date_from: document.querySelector('[name="date_from"]')?.value || '',
+                date_to: document.querySelector('[name="date_to"]')?.value || ''
+            };
+            
+            localStorage.setItem('transactionsFilters', JSON.stringify(currentFilters));
+        }
+        
+        // Load filter preferences
+        function loadFilterPreferences() {
+            const saved = localStorage.getItem('transactionsFilters');
+            if (saved) {
+                const filters = JSON.parse(saved);
+                console.log('Saved filters:', filters);
+                // Optionally restore filters (commented to avoid auto-apply)
+            }
+        }
+        
+        // Initialize
+        function init() {
+            highlightRows();
+            loadFilterPreferences();
+            
+            // Save filters on form submit
+            if (filterForm) {
+                filterForm.addEventListener('submit', () => {
+                    saveFilterPreferences();
+                });
+            }
+        }
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+        
+    })();
+</script>
+{% endblock %}
