@@ -1,52 +1,426 @@
 {% extends "base.html" %}
-{% block title %}Register{% endblock %}
+{% block title %}Register — Saveur{% endblock %}
+
 {% block content %}
 
-<h3 class="mb-3">Create Account</h3>
+<style>
+  .reg-wrap {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 1rem 0 2rem;
+  }
 
-{% if error %}
-  <div class="alert alert-danger">{{ error }}</div>
-{% endif %}
+  .reg-eyebrow {
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
+  }
 
-<form method="post" class="card p-3" style="max-width:520px;">
-  {% csrf_token %}
+  .reg-heading {
+    font-family: var(--font-display);
+    font-size: 2.6rem;
+    font-weight: 300;
+    color: var(--cream);
+    line-height: 1.1;
+    margin-bottom: 0.5rem;
+  }
 
-  <div class="mb-3">
-    <label class="form-label">Full Name</label>
-    <input class="form-control" name="full_name" required>
+  .reg-sub {
+    font-size: 0.85rem;
+    color: var(--cream-40);
+    font-weight: 300;
+    margin-bottom: 2.25rem;
+  }
+
+  /* ─── Two-col grid for paired fields ─── */
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  @media (max-width: 480px) {
+    .field-row { grid-template-columns: 1fr; }
+  }
+
+  .field-group {
+    margin-bottom: 1.2rem;
+  }
+
+  .field-label {
+    display: block;
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--cream-60);
+    margin-bottom: 0.5rem;
+  }
+
+  .field-input {
+    width: 100%;
+    background: rgba(240, 236, 228, 0.05);
+    border: 1px solid rgba(200, 170, 110, 0.18);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    font-family: var(--font-body);
+    color: var(--cream);
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+    appearance: none;
+  }
+
+  .field-input::placeholder { color: rgba(240, 236, 228, 0.2); }
+
+  .field-input:focus {
+    border-color: rgba(200, 170, 110, 0.5);
+    background: rgba(200, 170, 110, 0.06);
+  }
+
+  /* valid / invalid states */
+  .field-input.is-valid {
+    border-color: rgba(100, 180, 100, 0.45);
+    background: rgba(100, 180, 100, 0.04);
+  }
+
+  .field-input.is-invalid {
+    border-color: rgba(200, 80, 80, 0.5);
+    background: rgba(200, 80, 80, 0.04);
+  }
+
+  .field-hint {
+    font-size: 0.72rem;
+    color: var(--cream-40);
+    margin-top: 0.35rem;
+    min-height: 1rem;
+    transition: color 0.2s;
+  }
+
+  .field-hint.error { color: #e8a0a0; }
+  .field-hint.ok    { color: #90c890; }
+
+  /* password wrap */
+  .field-input-wrap { position: relative; }
+  .field-input-wrap .field-input { padding-right: 3rem; }
+
+  .pw-toggle {
+    position: absolute;
+    right: 0.9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--cream-40);
+    cursor: pointer;
+    padding: 0;
+    font-size: 1rem;
+    transition: color 0.2s;
+    line-height: 1;
+  }
+
+  .pw-toggle:hover { color: var(--cream-60); }
+
+  /* ─── strength bar ─── */
+  .strength-bar {
+    height: 3px;
+    border-radius: 100px;
+    background: rgba(240, 236, 228, 0.08);
+    margin-top: 0.5rem;
+    overflow: hidden;
+  }
+
+  .strength-fill {
+    height: 100%;
+    border-radius: 100px;
+    width: 0%;
+    transition: width 0.3s, background 0.3s;
+  }
+
+  /* ─── Error banner ─── */
+  .reg-error {
+    background: rgba(50, 20, 20, 0.55);
+    border: 1px solid rgba(180, 80, 80, 0.25);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    font-size: 0.82rem;
+    color: #e8a8a8;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  /* ─── Section divider label ─── */
+  .form-section-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(200, 170, 110, 0.4);
+    margin: 1.5rem 0 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .form-section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ─── Submit ─── */
+  .btn-register {
+    width: 100%;
+    background: var(--gold);
+    color: var(--obsidian);
+    border: none;
+    border-radius: 100px;
+    padding: 0.8rem 1.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    font-family: var(--font-body);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    margin-top: 0.75rem;
+  }
+
+  .btn-register:hover {
+    background: var(--gold-light);
+    transform: translateY(-1px);
+  }
+
+  .btn-register:active { transform: translateY(0); }
+
+  /* ─── Footer ─── */
+  .reg-footer {
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--cream-40);
+    margin-top: 1.5rem;
+  }
+
+  .reg-footer a {
+    color: var(--gold);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .reg-footer a:hover { color: var(--gold-light); }
+
+  /* ─── Card top accent ─── */
+  .reg-card-wrap { position: relative; }
+
+  .reg-card-wrap::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 2rem;
+    width: 48px;
+    height: 2px;
+    background: var(--gold);
+    border-radius: 0 0 2px 2px;
+  }
+</style>
+
+<div class="reg-wrap">
+
+  <p class="reg-eyebrow">New here?</p>
+  <h1 class="reg-heading">Create your<br>account</h1>
+  <p class="reg-sub">Join us and enjoy fresh meals delivered to you.</p>
+
+  {% if error %}
+    <div class="reg-error">
+      <i class="bi bi-exclamation-circle-fill"></i>
+      {{ error }}
+    </div>
+  {% endif %}
+
+  <div class="reg-card-wrap">
+    <form method="post" id="regForm" novalidate>
+      {% csrf_token %}
+
+      <!-- Personal -->
+      <div class="form-section-label">Personal details</div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label" for="id_full_name">Full Name</label>
+          <input
+            class="field-input"
+            id="id_full_name"
+            name="full_name"
+            type="text"
+            placeholder="Ada Okafor"
+            autocomplete="name"
+            required
+          >
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="id_username">Username</label>
+          <input
+            class="field-input"
+            id="id_username"
+            name="username"
+            type="text"
+            placeholder="ada_ok"
+            autocomplete="username"
+            required
+          >
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label" for="id_email">Email</label>
+          <input
+            class="field-input"
+            id="id_email"
+            name="email"
+            type="email"
+            placeholder="ada@email.com"
+            autocomplete="email"
+            required
+          >
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="id_phone">Phone</label>
+          <input
+            class="field-input"
+            id="id_phone"
+            name="phone"
+            type="tel"
+            placeholder="0801 234 5678"
+            autocomplete="tel"
+            required
+          >
+        </div>
+      </div>
+
+      <!-- Security -->
+      <div class="form-section-label">Security</div>
+
+      <div class="field-group">
+        <label class="field-label" for="id_password1">Password</label>
+        <div class="field-input-wrap">
+          <input
+            class="field-input"
+            id="id_password1"
+            name="password1"
+            type="password"
+            placeholder="••••••••"
+            autocomplete="new-password"
+            required
+          >
+          <button type="button" class="pw-toggle" id="pw1Toggle" aria-label="Toggle password">
+            <i class="bi bi-eye" id="pw1Icon"></i>
+          </button>
+        </div>
+        <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+        <div class="field-hint" id="strengthHint"></div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="id_password2">Confirm Password</label>
+        <div class="field-input-wrap">
+          <input
+            class="field-input"
+            id="id_password2"
+            name="password2"
+            type="password"
+            placeholder="••••••••"
+            autocomplete="new-password"
+            required
+          >
+          <button type="button" class="pw-toggle" id="pw2Toggle" aria-label="Toggle confirm password">
+            <i class="bi bi-eye" id="pw2Icon"></i>
+          </button>
+        </div>
+        <div class="field-hint" id="matchHint"></div>
+      </div>
+
+      <button class="btn-register" type="submit">Create account</button>
+
+    </form>
   </div>
 
-  <div class="mb-3">
-    <label class="form-label">username</label>
-    <input class="form-control" name="username" type="text" required>
-  </div>
-
-  <div class="mb-3">
-    <label class="form-label">Email</label>
-    <input class="form-control" name="email" type="email" required>
-  </div>
-
-  <div class="mb-3">
-    <label class="form-label">Phone</label>
-    <input class="form-control" name="phone" required>
-  </div>
-
-  <div class="mb-3">
-    <label class="form-label">Password</label>
-    <input class="form-control" name="password1" type="password" required>
-  </div>
-
-  <div class="mb-3">
-    <label class="form-label">Confirm Password</label>
-    <input class="form-control" name="password2" type="password" required>
-  </div>
-
-  <button class="btn btn-dark">Register</button>
-
-  <p class="mt-3 mb-0 small">
+  <p class="reg-footer">
     Already have an account?
-    <a href="{% url 'accounts:login' %}">Login</a>
+    <a href="{% url 'accounts:login' %}">Sign in &rarr;</a>
   </p>
-</form>
+
+</div>
+
+<script>
+  (function () {
+    /* ── Password toggles ── */
+    function makeToggle(btnId, iconId, inputId) {
+      var btn   = document.getElementById(btnId);
+      var icon  = document.getElementById(iconId);
+      var input = document.getElementById(inputId);
+      if (!btn) return;
+      btn.addEventListener('click', function () {
+        var show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        icon.className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+      });
+    }
+
+    makeToggle('pw1Toggle', 'pw1Icon', 'id_password1');
+    makeToggle('pw2Toggle', 'pw2Icon', 'id_password2');
+
+    /* ── Strength meter ── */
+    var pw1         = document.getElementById('id_password1');
+    var fill        = document.getElementById('strengthFill');
+    var strengthMsg = document.getElementById('strengthHint');
+
+    pw1.addEventListener('input', function () {
+      var v = pw1.value;
+      var score = 0;
+      if (v.length >= 8)               score++;
+      if (/[A-Z]/.test(v))             score++;
+      if (/[0-9]/.test(v))             score++;
+      if (/[^A-Za-z0-9]/.test(v))      score++;
+
+      var pct   = ['0%', '30%', '55%', '78%', '100%'][score];
+      var color = ['#e07070', '#e09070', '#c8aa6e', '#90c890', '#60c490'][score];
+      var label = ['', 'Weak', 'Fair', 'Good', 'Strong'][score];
+      var cls   = ['', 'error', '', 'ok', 'ok'][score];
+
+      fill.style.width      = pct;
+      fill.style.background = color;
+      strengthMsg.textContent  = label;
+      strengthMsg.className    = 'field-hint ' + cls;
+    });
+
+    /* ── Confirm match ── */
+    var pw2      = document.getElementById('id_password2');
+    var matchMsg = document.getElementById('matchHint');
+
+    function checkMatch() {
+      if (!pw2.value) { matchMsg.textContent = ''; return; }
+      if (pw1.value === pw2.value) {
+        matchMsg.textContent = 'Passwords match';
+        matchMsg.className   = 'field-hint ok';
+        pw2.classList.remove('is-invalid');
+        pw2.classList.add('is-valid');
+      } else {
+        matchMsg.textContent = 'Passwords do not match';
+        matchMsg.className   = 'field-hint error';
+        pw2.classList.remove('is-valid');
+        pw2.classList.add('is-invalid');
+      }
+    }
+
+    pw2.addEventListener('input', checkMatch);
+    pw1.addEventListener('input', checkMatch);
+  })();
+</script>
 
 {% endblock %}

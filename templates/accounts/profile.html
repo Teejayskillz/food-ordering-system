@@ -1,30 +1,354 @@
 {% extends "base.html" %}
-{% block title %}My Profile{% endblock %}
+{% block title %}My Profile — Saveur{% endblock %}
+
 {% block content %}
 
-<h3 class="mb-3">My Profile</h3>
+<style>
+  .profile-wrap {
+    max-width: 580px;
+    margin: 0 auto;
+    padding: 1rem 0 2rem;
+  }
 
-<div class="card p-3" style="max-width: 650px;">
-  <form method="post">
-    {% csrf_token %}
+  /* ─── Header row ─── */
+  .profile-header {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin-bottom: 2.5rem;
+  }
 
-    <div class="mb-3">
-      <label class="form-label">Full Name</label>
-      {{ form.full_name }}
+  .profile-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--gold-dim);
+    border: 1px solid var(--gold-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 300;
+    color: var(--gold);
+    flex-shrink: 0;
+    user-select: none;
+  }
+
+  .profile-meta {
+    flex: 1;
+  }
+
+  .profile-eyebrow {
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.3rem;
+  }
+
+  .profile-name {
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    font-weight: 300;
+    color: var(--cream);
+    line-height: 1.1;
+    margin: 0;
+  }
+
+  .profile-username {
+    font-size: 0.78rem;
+    color: var(--cream-40);
+    margin-top: 0.2rem;
+  }
+
+  /* ─── Stat pills ─── */
+  .profile-stats {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 2.5rem;
+  }
+
+  .stat-cell {
+    flex: 1;
+    background: var(--obsidian);
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    transition: background 0.2s;
+  }
+
+  .stat-cell:hover { background: var(--surface); }
+
+  .stat-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--cream-40);
+  }
+
+  .stat-value {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 300;
+    color: var(--cream);
+  }
+
+  /* ─── Section label ─── */
+  .form-section-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(200, 170, 110, 0.4);
+    margin: 0 0 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .form-section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ─── Fields ─── */
+  .field-group { margin-bottom: 1.25rem; }
+
+  .field-label {
+    display: block;
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--cream-60);
+    margin-bottom: 0.5rem;
+  }
+
+  /* Override Django widget styles */
+  .field-group input,
+  .field-group textarea,
+  .field-group select {
+    width: 100%;
+    background: rgba(240, 236, 228, 0.05) !important;
+    border: 1px solid rgba(200, 170, 110, 0.18) !important;
+    border-radius: 12px !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.9rem !important;
+    font-family: var(--font-body) !important;
+    color: var(--cream) !important;
+    outline: none !important;
+    transition: border-color 0.2s, background 0.2s !important;
+    appearance: none;
+    resize: none;
+    box-shadow: none !important;
+  }
+
+  .field-group textarea {
+    min-height: 96px;
+    line-height: 1.6;
+  }
+
+  .field-group input::placeholder,
+  .field-group textarea::placeholder {
+    color: rgba(240, 236, 228, 0.2) !important;
+  }
+
+  .field-group input:focus,
+  .field-group textarea:focus,
+  .field-group select:focus {
+    border-color: rgba(200, 170, 110, 0.5) !important;
+    background: rgba(200, 170, 110, 0.06) !important;
+  }
+
+  /* ─── Read-only fields ─── */
+  .field-readonly {
+    width: 100%;
+    background: rgba(240, 236, 228, 0.02);
+    border: 1px solid rgba(240, 236, 228, 0.07);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    font-family: var(--font-body);
+    color: var(--cream-40);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: default;
+  }
+
+  .field-readonly i { font-size: 0.85rem; }
+
+  /* ─── Submit ─── */
+  .btn-save {
+    width: 100%;
+    background: var(--gold);
+    color: var(--obsidian);
+    border: none;
+    border-radius: 100px;
+    padding: 0.8rem 1.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    font-family: var(--font-body);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    margin-top: 0.5rem;
+  }
+
+  .btn-save:hover {
+    background: var(--gold-light);
+    transform: translateY(-1px);
+  }
+
+  .btn-save:active { transform: translateY(0); }
+
+  /* ─── Danger zone ─── */
+  .danger-zone {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(200, 80, 80, 0.15);
+  }
+
+  .danger-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(200, 80, 80, 0.4);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .danger-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(200, 80, 80, 0.12);
+  }
+
+  .btn-logout {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.72rem;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(220, 120, 120, 0.7);
+    background: transparent;
+    border: 1px solid rgba(200, 80, 80, 0.2);
+    border-radius: 100px;
+    padding: 0.42rem 1.1rem;
+    text-decoration: none;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+    cursor: pointer;
+  }
+
+  .btn-logout:hover {
+    color: #e88888;
+    border-color: rgba(200, 80, 80, 0.4);
+    background: rgba(200, 80, 80, 0.06);
+  }
+
+  /* ─── Top accent ─── */
+  .profile-card-wrap { position: relative; }
+
+  .profile-card-wrap::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 2rem;
+    width: 48px;
+    height: 2px;
+    background: var(--gold);
+    border-radius: 0 0 2px 2px;
+  }
+</style>
+
+<div class="profile-wrap">
+
+  <!-- Avatar + name header -->
+  <div class="profile-header">
+    <div class="profile-avatar" id="avatarInitial">
+      {{ user.first_name|first|upper|default:user.username|first|upper }}
     </div>
-
-    <div class="mb-3">
-      <label class="form-label">Phone</label>
-      {{ form.phone }}
+    <div class="profile-meta">
+      <p class="profile-eyebrow">Your profile</p>
+      <h1 class="profile-name">{{ user.get_full_name|default:user.username }}</h1>
+      <p class="profile-username">@{{ user.username }}</p>
     </div>
+  </div>
 
-    <div class="mb-3">
-      <label class="form-label">Default Address</label>
-      {{ form.default_address }}
+  <!-- Quick stats -->
+  <div class="profile-stats">
+    <div class="stat-cell">
+      <span class="stat-label">Member since</span>
+      <span class="stat-value">{{ user.date_joined|date:"M Y" }}</span>
     </div>
+    <div class="stat-cell">
+      <span class="stat-label">Orders placed</span>
+      <span class="stat-value">{{ order_count|default:"—" }}</span>
+    </div>
+    <div class="stat-cell">
+      <span class="stat-label">Wallet</span>
+      <span class="stat-value">₦{{ wallet_balance|default:"0" }}</span>
+    </div>
+  </div>
 
-    <button class="btn btn-dark">Save Changes</button>
-  </form>
+  <!-- Edit form -->
+  <div class="profile-card-wrap">
+    <form method="post" id="profileForm">
+      {% csrf_token %}
+
+      <div class="form-section-label">Personal details</div>
+
+      <div class="field-group">
+        <label class="field-label" for="{{ form.full_name.id_for_label }}">Full Name</label>
+        {{ form.full_name }}
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="{{ form.phone.id_for_label }}">Phone</label>
+        {{ form.phone }}
+      </div>
+
+      <!-- Read-only account info -->
+      <div class="field-group">
+        <label class="field-label">Email</label>
+        <div class="field-readonly">
+          <i class="bi bi-lock"></i>
+          {{ user.email }}
+        </div>
+      </div>
+
+      <div class="form-section-label" style="margin-top: 1.75rem;">Delivery</div>
+
+      <div class="field-group">
+        <label class="field-label" for="{{ form.default_address.id_for_label }}">Default Address</label>
+        {{ form.default_address }}
+      </div>
+
+      <button class="btn-save" type="submit">Save changes</button>
+    </form>
+  </div>
+
+  <!-- Danger zone -->
+  <div class="danger-zone">
+    <div class="danger-label">Account</div>
+    <a class="btn-logout" href="{% url 'accounts:logout' %}">
+      <i class="bi bi-box-arrow-right"></i>
+      Sign out
+    </a>
+  </div>
+
 </div>
 
 {% endblock %}

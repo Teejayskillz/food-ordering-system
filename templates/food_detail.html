@@ -57,33 +57,122 @@
       </div>
 
       <!-- Availability -->
-      {% if food.available %}
-      <div class="d-flex flex-wrap gap-2">
-        <a class="btn btn-warning btn-lg rounded-pill px-4"
-          href="{% url 'orders:add_to_cart' food.id %}?next={{ request.get_full_path|urlencode }}">
-          Add to Cart
-        </a>
-        <a class="btn btn-outline-light btn-lg rounded-pill px-4" href="{% url 'orders:cart' %}">
-          View Cart
-        </a>
-      </div>
+     <!-- Availability -->
+{% if food.available %}
+<div class="d-flex flex-wrap align-items-center gap-3">
 
-      <div class="text-success small mt-3">
-        ● Available for order
+  <div class="cart-stepper" data-food-id="{{ food.id }}">
+    {% if in_cart %}
+      <div class="stepper-controls d-flex align-items-center gap-2">
+        <button class="btn btn-warning btn-lg rounded-pill px-3 stepper-dec">−</button>
+        <span class="stepper-qty fw-bold fs-5 px-2">{{ quantity }}</span>
+        <button class="btn btn-warning btn-lg rounded-pill px-3 stepper-inc">+</button>
       </div>
-      {% else %}
-      <button class="btn btn-secondary btn-lg rounded-pill px-4" disabled>
-        Out of Stock
+    {% else %}
+      <button class="btn btn-warning btn-lg rounded-pill px-4 stepper-add">
+        Add to Cart
       </button>
+    {% endif %}
+  </div>
 
-      <div class="text-danger small mt-3">
-        ● Currently unavailable
-      </div>
-      {% endif %}
+  <a class="btn btn-outline-light btn-lg rounded-pill px-4" href="{% url 'orders:cart' %}">
+    View Cart
+  </a>
 
+</div>
+
+<div class="text-success small mt-3">● Available for order</div>
+
+{% else %}
+<button class="btn btn-secondary btn-lg rounded-pill px-4" disabled>
+  Out of Stock
+</button>
+<div class="text-danger small mt-3">● Currently unavailable</div>
+{% endif %}
     </div>
   </div>
 
 </div>
+<script>
+const CART_URL = "{% url 'orders:update_cart_ajax' %}";
+const CSRF = "{{ csrf_token }}";
+
+async function cartRequest(foodId, action) {
+  const res = await fetch(CART_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+    body: JSON.stringify({ food_id: foodId, action })
+  });
+  return res.json();
+}
+
+function buildStepper(qty) {
+  return `
+    <div class="stepper-controls d-flex align-items-center gap-2">
+      <button class="btn btn-warning btn-lg rounded-pill px-3 stepper-dec">−</button>
+      <span class="stepper-qty fw-bold fs-5 px-2">${qty}</span>
+      <button class="btn btn-warning btn-lg rounded-pill px-3 stepper-inc">+</button>
+    </div>`;
+}
+
+function buildAddBtn() {
+  return `<button class="btn btn-warning btn-lg rounded-pill px-4 stepper-add">Add to Cart</button>`;
+}
+
+function updateCartBadge(count) {
+  document.querySelectorAll('.btn-cart').forEach(function(btn) {
+    let badge = btn.querySelector('.cart-badge');
+    if (count > 0) {
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'cart-badge';
+        btn.appendChild(badge);
+      }
+      badge.textContent = count;
+    } else {
+      if (badge) badge.remove();
+    }
+  });
+}
+
+document.addEventListener('click', async function(e) {
+  // ADD
+  if (e.target.classList.contains('stepper-add')) {
+    const wrap = e.target.closest('.cart-stepper');
+    const foodId = wrap.dataset.foodId;
+    e.target.disabled = true;
+    const data = await cartRequest(foodId, 'add');
+    if (data.status === 'ok') {
+      wrap.innerHTML = buildStepper(data.quantity);
+      updateCartBadge(data.cart_count);
+    }
+  }
+
+  // INCREMENT
+  if (e.target.classList.contains('stepper-inc')) {
+    const wrap = e.target.closest('.cart-stepper');
+    const foodId = wrap.dataset.foodId;
+    const data = await cartRequest(foodId, 'increment');
+    if (data.status === 'ok') {
+      wrap.querySelector('.stepper-qty').textContent = data.quantity;
+      updateCartBadge(data.cart_count);
+    }
+  }
+
+  // DECREMENT
+  if (e.target.classList.contains('stepper-dec')) {
+    const wrap = e.target.closest('.cart-stepper');
+    const foodId = wrap.dataset.foodId;
+    const data = await cartRequest(foodId, 'decrement');
+    if (data.status === 'removed') {
+      wrap.innerHTML = buildAddBtn();
+      updateCartBadge(data.cart_count);
+    } else if (data.status === 'ok') {
+      wrap.querySelector('.stepper-qty').textContent = data.quantity;
+      updateCartBadge(data.cart_count);
+    }
+  }
+});
+</script>
 
 {% endblock %}

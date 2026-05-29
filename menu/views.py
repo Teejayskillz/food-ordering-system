@@ -50,7 +50,23 @@ def menu_list(request):
 
 def food_detail(request, pk):
     food = get_object_or_404(FoodItem, pk=pk, available=True)
-    return render(request, "food_detail.html", {"food": food})
+
+    in_cart = False
+    quantity = 0
+
+    if request.user.is_authenticated:
+        cart = Cart.objects.filter(user=request.user).first()
+        if cart:
+            item = cart.items.filter(food=food).first()
+            if item:
+                in_cart = True
+                quantity = item.quantity
+
+    return render(request, "food_detail.html", {
+        "food": food,
+        "in_cart": in_cart,
+        "quantity": quantity,
+    })
 
 from django.shortcuts import render
 
