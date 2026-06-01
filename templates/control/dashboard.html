@@ -89,6 +89,21 @@
         color: #e0a0a0;
     }
     
+    /* ADDED: Delivery highlight styles */
+    .delivery-highlight {
+        border-left: 3px solid var(--gold);
+    }
+    
+    .status-assigned-dash {
+        background: rgba(120, 120, 200, 0.15);
+        color: #a0a8ff;
+    }
+    
+    .status-onway-dash {
+        background: rgba(200, 150, 80, 0.15);
+        color: #ffcc80;
+    }
+    
     /* Recent orders table */
     .recent-orders-card {
         background: var(--cream-04);
@@ -475,6 +490,27 @@
     </div>
 </div>
 
+<!-- ADDED: NEW DELIVERY STATS ROW -->
+<div class="stats-grid">
+    <div class="stat-card delivery-highlight">
+        <div class="stat-icon"><i class="bi bi-person-check"></i></div>
+        <div class="stat-title">Assigned Orders</div>
+        <div class="stat-value">{{ assigned_orders|default:"0" }}</div>
+    </div>
+
+    <div class="stat-card delivery-highlight">
+        <div class="stat-icon"><i class="bi bi-truck"></i></div>
+        <div class="stat-title">On The Way</div>
+        <div class="stat-value">{{ on_the_way_orders|default:"0" }}</div>
+    </div>
+
+    <div class="stat-card delivery-highlight">
+        <div class="stat-icon"><i class="bi bi-check2-circle"></i></div>
+        <div class="stat-title">Delivered Today</div>
+        <div class="stat-value">{{ delivered_today|default:"0" }}</div>
+    </div>
+</div>
+
 <div class="row g-4">
     <!-- Recent Orders Section -->
     <div class="col-12 col-lg-7">
@@ -515,6 +551,14 @@
                                 {% elif o.status == 'preparing' %}
                                 <span class="status-badge-dashboard status-preparing-dash">
                                     <i class="bi bi-egg-fried"></i> Preparing
+                                </span>
+                                {% elif o.status == 'assigned' %}
+                                <span class="status-badge-dashboard status-assigned-dash">
+                                    <i class="bi bi-person-check"></i> Assigned
+                                </span>
+                                {% elif o.status == 'on_the_way' %}
+                                <span class="status-badge-dashboard status-onway-dash">
+                                    <i class="bi bi-truck"></i> On The Way
                                 </span>
                                 {% elif o.status == 'delivered' %}
                                 <span class="status-badge-dashboard status-delivered-dash">
@@ -573,6 +617,20 @@
                 </div>
                 <div class="stats-list-item">
                     <div class="stats-list-label">
+                        <i class="bi bi-person-check" style="color: #a0a8ff;"></i>
+                        Assigned
+                    </div>
+                    <div class="stats-list-value" id="assignedCount">{{ assigned_orders|default:"0" }}</div>
+                </div>
+                <div class="stats-list-item">
+                    <div class="stats-list-label">
+                        <i class="bi bi-truck" style="color: #ffcc80;"></i>
+                        On The Way
+                    </div>
+                    <div class="stats-list-value" id="onTheWayCount">{{ on_the_way_orders|default:"0" }}</div>
+                </div>
+                <div class="stats-list-item">
+                    <div class="stats-list-label">
                         <i class="bi bi-check2-circle" style="color: #8fdf8f;"></i>
                         Delivered
                     </div>
@@ -588,7 +646,7 @@
             </div>
         </div>
 
-        <!-- Top Selling Items - FIXED: Removed item_name reference -->
+        <!-- Top Selling Items -->
         <div class="top-foods-list">
             <div class="card-header-custom">
                 <h5>
@@ -606,10 +664,8 @@
                             {{ forloop.counter }}
                             {% endif %}
                         </div>
-                        <!-- FIXED: Only use food__name, remove item_name -->
                         <span class="top-food-name">{{ x.food__name }}</span>
                     </div>
-                    <!-- FIXED: Only use qty, remove total_quantity -->
                     <div class="top-food-qty">{{ x.qty }} sold</div>
                 </div>
                 {% empty %}

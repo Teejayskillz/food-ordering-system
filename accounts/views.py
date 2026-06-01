@@ -29,6 +29,8 @@ def _redirect_after_login(user):
     # Admin/staff go to frontend admin dashboard
     if user.is_staff:
         return redirect("control:dashboard")
+    if user.profile.is_delivery_guy:
+        return redirect("delivery:dashboard")
     # Normal users
     return redirect("menu:home")
 

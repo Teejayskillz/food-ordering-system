@@ -1,0 +1,439 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Delivery Dashboard · Naija Eats{% endblock %}
+
+{% block content %}
+
+<style>
+    .stat-card {
+        background: var(--cream-04);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1rem;
+        transition: all 0.2s;
+    }
+    
+    .stat-card:hover {
+        border-color: var(--gold-border);
+        transform: translateY(-2px);
+    }
+    
+    .stat-number {
+        font-family: var(--font-display);
+        font-size: 2rem;
+        font-weight: 500;
+        color: var(--gold);
+        line-height: 1;
+    }
+    
+    .stat-label {
+        font-size: 0.7rem;
+        color: var(--cream-60);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .order-table {
+        background: var(--cream-04);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    
+    .order-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        transition: background 0.2s;
+    }
+    
+    .order-row:last-child {
+        border-bottom: none;
+    }
+    
+    .order-row:hover {
+        background: var(--cream-08);
+    }
+    
+    .order-col {
+        flex: 1;
+    }
+    
+    .order-id {
+        font-weight: 600;
+        color: var(--gold);
+        font-size: 0.9rem;
+    }
+    
+    .order-id small {
+        font-size: 0.65rem;
+        color: var(--cream-40);
+    }
+    
+    .address-text {
+        font-size: 0.8rem;
+        color: var(--cream);
+        max-width: 250px;
+    }
+    
+    .address-text small {
+        font-size: 0.65rem;
+        color: var(--cream-40);
+        display: block;
+    }
+    
+    .phone-link {
+        color: var(--cream-60);
+        text-decoration: none;
+        font-size: 0.75rem;
+    }
+    
+    .phone-link:hover {
+        color: var(--gold);
+    }
+    
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 100px;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+    
+    .status-assigned {
+        background: rgba(120, 120, 200, 0.15);
+        color: #a0a8ff;
+    }
+    
+    .status-picked {
+        background: rgba(100, 160, 200, 0.15);
+        color: #7fc4e0;
+    }
+    
+    .status-ontheway {
+        background: rgba(200, 150, 80, 0.15);
+        color: #ffcc80;
+    }
+    
+    .status-delivered {
+        background: rgba(100, 200, 100, 0.15);
+        color: #8fdf8f;
+    }
+    
+    .btn-action {
+        padding: 0.4rem 1rem;
+        border-radius: 100px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .btn-pickup {
+        background: var(--gold-dim);
+        border: 1px solid var(--gold-border);
+        color: var(--gold);
+    }
+    
+    .btn-pickup:hover {
+        background: rgba(200, 170, 110, 0.25);
+    }
+    
+    .btn-deliver {
+        background: rgba(100, 160, 200, 0.15);
+        border: 1px solid rgba(100, 160, 200, 0.3);
+        color: #7fc4e0;
+    }
+    
+    .btn-deliver:hover {
+        background: rgba(100, 160, 200, 0.25);
+    }
+    
+    .code-input {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    
+    .code-input input {
+        width: 100px;
+        background: var(--cream-08);
+        border: 1px solid var(--border);
+        border-radius: 100px;
+        padding: 0.4rem 0.75rem;
+        color: var(--cream);
+        font-family: monospace;
+        font-size: 0.8rem;
+        text-align: center;
+        letter-spacing: 0.1rem;
+    }
+    
+    .code-input input:focus {
+        outline: none;
+        border-color: var(--gold);
+    }
+    
+    .btn-verify {
+        background: rgba(100, 200, 100, 0.15);
+        border: 1px solid rgba(100, 200, 100, 0.3);
+        color: #8fdf8f;
+    }
+    
+    .btn-verify:hover {
+        background: rgba(100, 200, 100, 0.25);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        opacity: 0.3;
+        margin-bottom: 1rem;
+    }
+    
+    @media (max-width: 768px) {
+        .order-row {
+            flex-direction: column;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+        
+        .order-col {
+            width: 100%;
+        }
+        
+        .address-text {
+            max-width: 100%;
+        }
+    }
+</style>
+
+<!-- Header Section -->
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+    <div>
+        <h2 style="font-family: var(--font-display); color: var(--gold);">
+            <i class="bi bi-truck me-2"></i>Delivery Dashboard
+        </h2>
+        <p class="text-cream-60 mb-0">
+            Welcome back, {{ request.user.get_full_name|default:request.user.username }}
+        </p>
+    </div>
+    <div class="bg-cream-08 px-4 py-2 rounded-pill">
+        <span class="text-cream-60 small">Today's Deliveries</span>
+        <strong class="text-gold fs-4 ms-2">{{ today_delivered.count }}</strong>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-number">{{ assigned.count|default:"0" }}</div>
+            <div class="stat-label">Assigned</div>
+            <div class="small text-cream-40 mt-1">Ready for pickup</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-number">{{ picked_up.count|default:"0" }}</div>
+            <div class="stat-label">Picked Up</div>
+            <div class="small text-cream-40 mt-1">In transit</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-number">{{ on_the_way.count|default:"0" }}</div>
+            <div class="stat-label">On The Way</div>
+            <div class="small text-cream-40 mt-1">Almost there</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-number">{{ delivered.count|default:"0" }}</div>
+            <div class="stat-label">Delivered</div>
+            <div class="small text-cream-40 mt-1">Completed</div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Deliveries Section -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0" style="font-family: var(--font-display); color: var(--gold);">
+        <i class="bi bi-list-check me-2"></i>Active Deliveries
+    </h5>
+    <span class="badge bg-cream-08 text-cream-60 rounded-pill px-3">
+        {{ assigned.count|add:picked_up.count|add:on_the_way.count }} active
+    </span>
+</div>
+
+<div class="order-table">
+    {% for order in orders %}
+        {% if order.status != "delivered" %}
+        <div class="order-row">
+            <!-- Order ID -->
+            <div class="order-col" style="min-width: 100px;">
+                <div class="order-id">
+                    #{{ order.id }}
+                    <small>{{ order.created_at|date:"H:i" }}</small>
+                </div>
+                <div class="small text-cream-60 mt-1">
+                    {{ order.items.count }} item(s)
+                </div>
+            </div>
+            
+            <!-- Customer Info -->
+            <div class="order-col">
+                <div class="address-text" title="{{ order.delivery_address }}">
+                    <i class="bi bi-geo-alt me-1"></i>
+                    {{ order.delivery_address|truncatechars:35|default:"No address" }}
+                </div>
+                <div class="mt-1">
+                    <i class="bi bi-telephone me-1"></i>
+                    <a href="tel:{{ order.phone }}" class="phone-link">{{ order.phone|default:"No phone" }}</a>
+                </div>
+            </div>
+            
+            <!-- Total -->
+            <div class="order-col" style="min-width: 80px;">
+                <div class="fw-semibold text-gold">₦{{ order.total_amount }}</div>
+            </div>
+            
+            <!-- Status & Actions -->
+            <div class="order-col">
+                <div class="d-flex flex-wrap gap-2 justify-content-end align-items-center">
+                    <!-- Status Badge -->
+                    <span class="status-badge 
+                        {% if order.status == 'assigned' %}status-assigned
+                        {% elif order.status == 'picked_up' %}status-picked
+                        {% elif order.status == 'on_the_way' %}status-ontheway
+                        {% endif %}">
+                        <i class="bi 
+                            {% if order.status == 'assigned' %}bi-person-check
+                            {% elif order.status == 'picked_up' %}bi-box-seam
+                            {% elif order.status == 'on_the_way' %}bi-truck
+                            {% endif %} me-1"></i>
+                        {{ order.get_status_display|default:order.status|title }}
+                    </span>
+                    
+                    <!-- Action Buttons -->
+                    {% if order.status == "assigned" %}
+                        <form method="post" action="{% url 'delivery:update_delivery_status' order.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="picked_up">
+                            <button type="submit" class="btn-action btn-pickup">
+                                <i class="bi bi-box-seam me-1"></i>Confirm Pickup
+                            </button>
+                        </form>
+                    {% endif %}
+                    
+                    {% if order.status == "picked_up" %}
+                        <form method="post" action="{% url 'delivery:update_delivery_status' order.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="on_the_way">
+                            <button type="submit" class="btn-action btn-deliver">
+                                <i class="bi bi-truck me-1"></i>Start Delivery
+                            </button>
+                        </form>
+                    {% endif %}
+                    
+                    {% if order.status == "on_the_way" %}
+                        <form method="post" action="{% url 'delivery:verify_delivery_code' order.id %}" class="code-input">
+                            {% csrf_token %}
+                            <input type="text" name="code" placeholder="Code" maxlength="6" pattern="\d{6}" required autocomplete="off">
+                            <button type="submit" class="btn-action btn-verify">
+                                <i class="bi bi-check2-circle me-1"></i>Complete
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    {% empty %}
+        <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <h5 class="text-cream-60">No Active Deliveries</h5>
+            <p class="text-cream-40 small">You don't have any assigned deliveries at the moment.</p>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Completed Deliveries Section -->
+{% if delivered.exists %}
+<div class="mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0" style="font-family: var(--font-display); color: var(--cream-60);">
+            <i class="bi bi-check2-circle me-2"></i>Completed Today
+        </h5>
+        <span class="badge bg-cream-08 text-cream-60 rounded-pill px-3">{{ delivered.count }} delivered</span>
+    </div>
+    
+    <div class="order-table">
+        {% for order in delivered|slice:":5" %}
+        <div class="order-row">
+            <div class="order-col">
+                <div class="order-id">#{{ order.id }}</div>
+            </div>
+            <div class="order-col">
+                <div class="address-text text-cream-60">{{ order.delivery_address|truncatechars:40|default:"No address" }}</div>
+            </div>
+            <div class="order-col">
+                <div class="small text-cream-60">₦{{ order.total_amount }}</div>
+            </div>
+            <div class="order-col">
+                <span class="status-badge status-delivered">
+                    <i class="bi bi-check2-circle me-1"></i>Completed
+                </span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-refresh every 30 seconds
+    (function() {
+        let refreshInterval = setInterval(function() {
+            fetch(window.location.href)
+                .then(response => {
+                    if (response.ok) location.reload();
+                })
+                .catch(err => console.log('Refresh error:', err));
+        }, 30000);
+        
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                clearInterval(refreshInterval);
+            } else {
+                refreshInterval = setInterval(function() {
+                    location.reload();
+                }, 30000);
+            }
+        });
+        
+        // Loading effect on form submit
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function() {
+                const btn = this.querySelector('button');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Processing...';
+                }
+            });
+        });
+    })();
+</script>
+{% endblock %}

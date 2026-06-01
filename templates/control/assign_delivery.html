@@ -1,0 +1,594 @@
+{% extends "control/base.html" %}
+{% load static %}
+
+{% block title %}Assign Delivery Person · Order #{{ order.id }} · Saveur Admin{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Card Styles */
+    .assign-card {
+        background: var(--cream-04);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        transition: all 0.2s ease;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .assign-card:hover {
+        border-color: var(--gold-border);
+    }
+    
+    /* Header Section */
+    .order-header {
+        background: linear-gradient(135deg, var(--cream-08) 0%, var(--cream-04) 100%);
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .order-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.4rem 1rem;
+        background: rgba(200, 170, 110, 0.15);
+        border: 1px solid rgba(200, 170, 110, 0.3);
+        border-radius: 100px;
+        font-size: 0.85rem;
+        color: var(--gold);
+    }
+    
+    /* Form Styles */
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--gold);
+        margin-bottom: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+    
+    .form-label i {
+        font-size: 1rem;
+    }
+    
+    .form-select-custom {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background: var(--cream-08);
+        border: 1px solid var(--border);
+        color: var(--cream);
+        border-radius: 12px;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23c8aa6e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 14px;
+    }
+    
+    .form-select-custom:hover {
+        background-color: var(--cream-20);
+        border-color: var(--gold-border);
+    }
+    
+    .form-select-custom:focus {
+        outline: none;
+        border-color: var(--gold);
+        box-shadow: 0 0 0 3px var(--gold-dim);
+    }
+    
+    /* Rider Cards */
+    .rider-option {
+        background: var(--cream-08);
+        border: 2px solid transparent;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .rider-option:hover {
+        background: var(--cream-20);
+        transform: translateX(4px);
+    }
+    
+    .rider-option.selected {
+        background: var(--cream-20);
+        border-color: var(--gold);
+    }
+    
+    .rider-avatar {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, var(--gold-dim) 0%, var(--gold-border) 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--obsidian);
+        flex-shrink: 0;
+    }
+    
+    .rider-info {
+        flex: 1;
+    }
+    
+    .rider-name {
+        font-weight: 600;
+        color: var(--cream);
+        margin-bottom: 0.25rem;
+    }
+    
+    .rider-status {
+        font-size: 0.75rem;
+        color: var(--cream-40);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    
+    .status-dot.available {
+        background: #4caf50;
+        box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+    }
+    
+    .status-dot.busy {
+        background: var(--gold);
+        box-shadow: 0 0 0 2px rgba(200, 170, 110, 0.2);
+    }
+    
+    .rider-check {
+        width: 24px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+    
+    .rider-check i {
+        font-size: 1.25rem;
+        transition: opacity 0.2s ease;
+    }
+    
+    /* Delivery Summary */
+    .delivery-summary {
+        background: var(--cream-08);
+        border-radius: 16px;
+        padding: 1rem;
+        margin: 1.5rem 0;
+    }
+    
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .summary-row:last-child {
+        border-bottom: none;
+    }
+    
+    .summary-label {
+        font-size: 0.8rem;
+        color: var(--cream-60);
+    }
+    
+    .summary-value {
+        font-weight: 600;
+        color: var(--cream);
+    }
+    
+    .summary-value.highlight {
+        color: var(--gold);
+        font-size: 1.1rem;
+    }
+    
+    /* Button Styles */
+    .button-group {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+    }
+    
+    .btn-assign {
+        flex: 1;
+        background: var(--gold);
+        border: none;
+        color: var(--obsidian);
+        border-radius: 12px;
+        padding: 0.875rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        cursor: pointer;
+    }
+    
+    .btn-assign:hover:not(:disabled) {
+        background: var(--gold-light);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(200, 170, 110, 0.3);
+    }
+    
+    .btn-assign:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .btn-cancel {
+        flex: 1;
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--cream-60);
+        border-radius: 12px;
+        padding: 0.875rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+    
+    .btn-cancel:hover {
+        background: var(--cream-08);
+        border-color: var(--gold-border);
+        color: var(--cream);
+        text-decoration: none;
+    }
+    
+    /* Alert Messages */
+    .alert-empty {
+        background: rgba(200, 170, 110, 0.1);
+        border: 1px solid rgba(200, 170, 110, 0.2);
+        border-radius: 16px;
+        padding: 2rem;
+        text-align: center;
+        color: var(--cream-60);
+    }
+    
+    .alert-empty i {
+        font-size: 3rem;
+        color: var(--gold-border);
+        margin-bottom: 1rem;
+        display: block;
+    }
+    
+    /* Loading State */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(14, 12, 10, 0.8);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .loading-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 3px solid var(--cream-08);
+        border-top-color: var(--gold);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .assign-card {
+            margin: 1rem;
+        }
+        
+        .rider-option {
+            padding: 0.75rem;
+        }
+        
+        .rider-avatar {
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
+        }
+        
+        .button-group {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block panel_title %}Assign Delivery Person{% endblock %}
+{% block panel_subtitle %}Order #{{ order.id }} · {{ order.created_at|date:"F j, Y" }}{% endblock %}
+
+{% block action_buttons %}
+<div class="d-flex gap-2 no-print">
+    <a href="{% url 'control:order_detail' order.id %}" class="btn-outline">
+        <i class="bi bi-arrow-left me-1"></i> Back to Order
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="assign-card p-4">
+        <!-- Order Summary Header -->
+        <div class="order-header">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <div class="order-badge">
+                    <i class="bi bi-truck"></i>
+                    <span>Pending Assignment</span>
+                </div>
+                <div class="order-badge">
+                    <i class="bi bi-cash-stack"></i>
+                    <span>₦{{ order.total_amount }}</span>
+                </div>
+            </div>
+            
+            <div class="d-flex flex-wrap gap-3 justify-content-between">
+                <div>
+                    <div class="small text-cream-40 mb-1">Customer</div>
+                    <div class="fw-semibold">{{ order.user.get_full_name|default:order.user.username }}</div>
+                    <div class="small text-cream-40">{{ order.user.email }}</div>
+                </div>
+                <div>
+                    <div class="small text-cream-40 mb-1">Delivery Address</div>
+                    <div class="fw-semibold">{{ order.delivery_address|default:"—" }}</div>
+                </div>
+                <div>
+                    <div class="small text-cream-40 mb-1">Items</div>
+                    <div class="fw-semibold">{{ order.items.count }} items</div>
+                </div>
+            </div>
+        </div>
+        
+        {% if delivery_guys %}
+        <form method="post" id="assignForm">
+            {% csrf_token %}
+            
+            <!-- Rider Selection -->
+            <div class="form-group">
+                <div class="form-label">
+                    <i class="bi bi-person-badge"></i>
+                    Select Delivery Rider
+                </div>
+                
+                <!-- Hidden select for form submission -->
+                <select name="delivery_person" id="riderSelect" class="form-select-custom" required style="display: none;">
+                    {% for rider in delivery_guys %}
+                    <option value="{{ rider.id }}">{{ rider.get_full_name|default:rider.username }}</option>
+                    {% endfor %}
+                </select>
+                
+                <!-- Visual rider cards -->
+                <div id="riderCards">
+                    {% for rider in delivery_guys %}
+                    <div class="rider-option" data-rider-id="{{ rider.id }}">
+                        <div class="rider-avatar">
+                            {{ rider.get_full_name|default:rider.username|make_list|first|upper }}
+                        </div>
+                        <div class="rider-info">
+                            <div class="rider-name">{{ rider.get_full_name|default:rider.username }}</div>
+                            <div class="rider-status">
+                                <span class="status-dot {% if rider.profile.is_delivery_guy %}available{% else %}busy{% endif %}"></span>
+                                {% if rider.profile.is_delivery_guy %}
+                                    Available
+                                {% else %}
+                                    Busy
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="rider-check">
+                            <i class="bi bi-check-circle-fill" style="color: var(--gold); opacity: 0;"></i>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Delivery Summary -->
+            <div class="delivery-summary">
+                <div class="summary-row">
+                    <span class="summary-label">Order Total</span>
+                    <span class="summary-value">₦{{ order.total_amount }}</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Delivery Fee</span>
+                    <span class="summary-value">₦0.00</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Rider Commission</span>
+                    <span class="summary-value">Calculated upon delivery</span>
+                </div>
+                <div class="summary-row mt-2 pt-2 border-top">
+                    <span class="summary-label">Selected Rider</span>
+                    <span class="summary-value highlight" id="selectedRiderName">None selected</span>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="button-group">
+                <button type="submit" class="btn-assign" id="assignBtn" disabled>
+                    <i class="bi bi-check2-circle"></i>
+                    Assign Delivery Person
+                </button>
+                <a href="{% url 'control:order_detail' order.id %}" class="btn-cancel">
+                    <i class="bi bi-x-circle"></i>
+                    Cancel
+                </a>
+            </div>
+        </form>
+        {% else %}
+        <!-- No riders available -->
+        <div class="alert-empty">
+            <i class="bi bi-person-x"></i>
+            <h5 class="mb-2">No Delivery Riders Available</h5>
+            <p class="mb-0 text-cream-60">Please add delivery personnel or check back later.</p>
+            <a href="{% url 'control:order_detail' order.id %}" class="btn-outline mt-3 d-inline-flex">
+                <i class="bi bi-arrow-left me-1"></i> Back to Order
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    'use strict';
+    
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const assignForm = document.getElementById('assignForm');
+    const assignBtn = document.getElementById('assignBtn');
+    const riderSelect = document.getElementById('riderSelect');
+    const riderCards = document.querySelectorAll('.rider-option');
+    const selectedRiderName = document.getElementById('selectedRiderName');
+    
+    let selectedRiderId = null;
+    
+    function showLoading() {
+        if (loadingOverlay) loadingOverlay.classList.add('active');
+    }
+    
+    function hideLoading() {
+        if (loadingOverlay) loadingOverlay.classList.remove('active');
+    }
+    
+    function selectRider(riderId, riderName) {
+        // Update UI
+        riderCards.forEach(card => {
+            const cardId = parseInt(card.dataset.riderId);
+            const checkIcon = card.querySelector('.bi-check-circle-fill');
+            
+            if (cardId === riderId) {
+                card.classList.add('selected');
+                if (checkIcon) checkIcon.style.opacity = '1';
+            } else {
+                card.classList.remove('selected');
+                if (checkIcon) checkIcon.style.opacity = '0';
+            }
+        });
+        
+        // Update hidden select
+        if (riderSelect) {
+            riderSelect.value = riderId;
+        }
+        
+        // Update display text
+        if (selectedRiderName) {
+            selectedRiderName.textContent = riderName;
+        }
+        
+        // Enable assign button
+        if (assignBtn) {
+            assignBtn.disabled = false;
+        }
+        
+        selectedRiderId = riderId;
+    }
+    
+    // Handle rider card clicks
+    if (riderCards.length > 0) {
+        riderCards.forEach(card => {
+            card.addEventListener('click', function() {
+                const riderId = parseInt(this.dataset.riderId);
+                const riderName = this.querySelector('.rider-name')?.textContent || 'Selected Rider';
+                selectRider(riderId, riderName);
+            });
+            
+            // Keyboard accessibility
+            card.setAttribute('tabindex', '0');
+            card.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    const riderId = parseInt(this.dataset.riderId);
+                    const riderName = this.querySelector('.rider-name')?.textContent || 'Selected Rider';
+                    selectRider(riderId, riderName);
+                }
+            });
+        });
+    }
+    
+    // Form submission
+    if (assignForm) {
+        assignForm.addEventListener('submit', function(e) {
+            if (!selectedRiderId) {
+                e.preventDefault();
+                alert('Please select a delivery rider');
+                return;
+            }
+            
+            if (confirm('Assign this delivery person to order #{{ order.id }}? The rider will be notified.')) {
+                showLoading();
+            } else {
+                e.preventDefault();
+            }
+        });
+    }
+    
+    // Auto-select first available rider if any
+    const firstAvailable = Array.from(riderCards).find(card => {
+        const statusDot = card.querySelector('.status-dot');
+        return statusDot?.classList.contains('available');
+    });
+    
+    if (firstAvailable) {
+        const riderId = parseInt(firstAvailable.dataset.riderId);
+        const riderName = firstAvailable.querySelector('.rider-name')?.textContent || 'Available Rider';
+        selectRider(riderId, riderName);
+    }
+})();
+</script>
+{% endblock %}

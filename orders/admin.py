@@ -16,6 +16,37 @@ class OrderItemInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "user",
+        "status",
+        "delivery_person",
+        "delivery_verified",
+        "payment_method",
+        "is_paid",
+        "total_amount",
+        "created_at",
+    )
+
+    list_filter = ("status", "payment_method", "is_paid", "delivery_verified")
+    search_fields = ("user__username", "phone", "delivery_address")
+
     inlines = [OrderItemInline]
-    list_display = ("id", "user", "status", "total_amount", "created_at")
-    list_filter = ("status", "created_at")
+
+    fieldsets = (
+        ("Order Info", {
+            "fields": ("user", "status", "total_amount")
+        }),
+        ("Delivery Info", {
+            "fields": (
+                "delivery_address",
+                "phone",
+                "delivery_person",
+                "delivery_code",
+                "delivery_verified",
+            )
+        }),
+        ("Payment Info", {
+            "fields": ("payment_method", "is_paid")
+        }),
+    )

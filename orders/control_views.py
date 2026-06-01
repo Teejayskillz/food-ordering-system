@@ -13,14 +13,61 @@ from decimal import Decimal
 from django.db.models import Sum
 from django.db.models.functions import Coalesce
 from orders.models import Order, OrderItem
+from django.contrib.auth.models import User
+import random
+import string
 
 
+# =========================
+# STAFF CHECK (MUST BE FIRST)
+# =========================
 def staff_required(view_func):
     return user_passes_test(
         lambda u: u.is_authenticated and u.is_staff,
         login_url="accounts:login"
     )(view_func)
 
+
+# =========================
+# DELIVERY HELPERS
+# =========================
+def _generate_delivery_code():
+    return ''.join(random.choices(string.digits, k=6))
+
+
+# =========================
+# DELIVERY ASSIGNMENT (NEW)
+# =========================
+@staff_required
+def assign_delivery_person(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+
+    delivery_guys = User.objects.filter(profile__is_delivery_guy=True)
+
+    if request.method == "POST":
+        rider_id = request.POST.get("delivery_person")
+        rider = get_object_or_404(User, id=rider_id)
+
+        order.delivery_person = rider
+        order.status = "assigned"
+
+        if not order.delivery_code:
+            order.delivery_code = _generate_delivery_code()
+
+        order.save(update_fields=["delivery_person", "status", "delivery_code"])
+
+        messages.success(request, f"Order assigned to {rider.username}")
+        return redirect("control:order_detail", order_id=order.id)
+
+    return render(request, "control/assign_delivery.html", {
+        "order": order,
+        "delivery_guys": delivery_guys
+    })
+
+
+# =========================
+# TOPUPS LIST
+# =========================
 @staff_required
 def topups_list(request):
     status = (request.GET.get("status") or "").strip().lower()
@@ -49,6 +96,10 @@ def topups_list(request):
         "q": q,
     })
 
+
+# =========================
+# FOOD ARCHIVE
+# =========================
 @staff_required
 def toggle_food_archive(request, food_id):
     if request.method != "POST":
@@ -64,10 +115,9 @@ def toggle_food_archive(request, food_id):
     return redirect("control:menu_list")
 
 
-
-# ---------------------------
+# =========================
 # DASHBOARD
-
+# =========================
 @staff_required
 def dashboard(request):
     today = timezone.localdate()
@@ -76,6 +126,9 @@ def dashboard(request):
     total_orders = Order.objects.count()
     pending_orders = Order.objects.filter(status="pending").count()
     preparing_orders = Order.objects.filter(status="preparing").count()
+    assigned_orders = Order.objects.filter(status="assigned").count()
+    on_the_way_orders = Order.objects.filter(status="on_the_way").count()
+    delivered_today = Order.objects.filter(status="delivered", created_at__date=today).count()
     delivered_orders = Order.objects.filter(status="delivered").count()
     cancelled_orders = Order.objects.filter(status="cancelled").count()
 
@@ -96,7 +149,6 @@ def dashboard(request):
     total_food = FoodItem.objects.count()
     available_food = FoodItem.objects.filter(available=True).count()
 
-    # Top selling foods (by qty) based on OrderItem
     top_foods = (
         OrderItem.objects.select_related("food")
         .values("food__name")
@@ -105,15 +157,15 @@ def dashboard(request):
     )
 
     recent_orders = Order.objects.select_related("user").order_by("-created_at")[:8]
-    recent_topups = (
-        WalletTopUp.objects.select_related("user", "reviewed_by")
-        .order_by("-created_at")[:8]
-    )
+    recent_topups = WalletTopUp.objects.select_related("user", "reviewed_by").order_by("-created_at")[:8]
 
-    context = {
+    return render(request, "control/dashboard.html", {
         "total_orders": total_orders,
         "pending_orders": pending_orders,
         "preparing_orders": preparing_orders,
+        "assigned_orders": assigned_orders,
+        "on_the_way_orders": on_the_way_orders,
+        "delivered_today": delivered_today,
         "delivered_orders": delivered_orders,
         "cancelled_orders": cancelled_orders,
         "paid_orders": paid_orders,
@@ -125,13 +177,12 @@ def dashboard(request):
         "top_foods": top_foods,
         "recent_orders": recent_orders,
         "recent_topups": recent_topups,
-    }
-    return render(request, "control/dashboard.html", context)
+    })
 
 
-# ---------------------------
-# ORDERS (list + detail + status update)
-# ---------------------------
+# =========================
+# ORDERS LIST
+# =========================
 @staff_required
 def orders_list(request):
     status = (request.GET.get("status") or "").strip().lower()
@@ -139,12 +190,11 @@ def orders_list(request):
 
     qs = Order.objects.select_related("user").order_by("-created_at")
 
-    allowed_statuses = {"pending", "preparing", "delivered", "cancelled"}
+    allowed_statuses = {"pending", "preparing", "assigned", "on_the_way", "delivered", "cancelled"}
     if status in allowed_statuses:
         qs = qs.filter(status=status)
 
     if q:
-        # Search by order id, username/email, phone
         qs = qs.filter(
             Q(id__icontains=q) |
             Q(user__username__icontains=q) |
@@ -153,8 +203,7 @@ def orders_list(request):
         )
 
     paginator = Paginator(qs, 25)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
+    page_obj = paginator.get_page(request.GET.get("page"))
 
     return render(request, "control/orders_list.html", {
         "page_obj": page_obj,
@@ -163,14 +212,15 @@ def orders_list(request):
         "allowed_statuses": sorted(list(allowed_statuses)),
     })
 
+
+# =========================
+# WALLET DEBIT
+# =========================
 def _wallet_debit_for_order_once(staff_user, order) -> bool:
-    """
-    Debit customer's wallet for this order exactly once.
-    Returns True if debited now, False if already debited before.
-    """
     already = WalletTransaction.objects.filter(
         order=order, source="order", tx_type="debit"
     ).exists()
+
     if already:
         return False
 
@@ -181,7 +231,7 @@ def _wallet_debit_for_order_once(staff_user, order) -> bool:
     if wallet.balance < order.total_amount:
         raise ValueError("Insufficient wallet balance.")
 
-    wallet.balance = wallet.balance - order.total_amount
+    wallet.balance -= order.total_amount
     wallet.save(update_fields=["balance", "updated_at"])
 
     WalletTransaction.objects.create(
@@ -195,83 +245,212 @@ def _wallet_debit_for_order_once(staff_user, order) -> bool:
     return True
 
 
+# =========================
+# ORDER DETAIL + DELIVERY FLOW
+# =========================
 @staff_required
 def order_detail(request, order_id):
     order = get_object_or_404(
         Order.objects.select_related("user").prefetch_related("items__food"),
         id=order_id
     )
-    allowed_statuses = {"pending", "preparing", "delivered", "cancelled"}
+
+    allowed_statuses = {"pending", "preparing", "assigned", "on_the_way", "delivered", "cancelled"}
 
     if request.method == "POST":
         action = (request.POST.get("action") or "").strip()
 
-        # 1) Update status
+        # ---------------------------
+        # UPDATE ORDER STATUS
+        # ---------------------------
         if action == "update_status":
             new_status = (request.POST.get("status") or "").strip().lower()
+
             if new_status not in allowed_statuses:
                 messages.error(request, "Invalid status.")
             else:
                 order.status = new_status
                 order.save(update_fields=["status"])
                 messages.success(request, "Order status updated.")
-                return redirect("control:order_detail", order_id=order.id)
 
-        # 3) Mark as paid (COD just marks paid; WALLET debits then marks paid)
+            return redirect("control:order_detail", order_id=order.id)
+
+        # ---------------------------
+        # MARK PAID
+        # ---------------------------
         elif action == "mark_paid":
             if order.is_paid:
-                messages.warning(request, "This order is already marked as paid.")
+                messages.warning(request, "Already paid.")
                 return redirect("control:order_detail", order_id=order.id)
 
             with transaction.atomic():
-                # lock order row
                 order = Order.objects.select_for_update().get(id=order.id)
-
-                if order.is_paid:
-                    messages.warning(request, "This order is already marked as paid.")
-                    return redirect("control:order_detail", order_id=order.id)
 
                 if order.payment_method == "wallet":
                     try:
-                        debited_now = _wallet_debit_for_order_once(request.user, order)
+                        _wallet_debit_for_order_once(request.user, order)
                     except ValueError as e:
                         messages.error(request, str(e))
                         return redirect("control:order_detail", order_id=order.id)
 
-                    order.is_paid = True
-                    order.save(update_fields=["is_paid"])
+                order.is_paid = True
+                order.save(update_fields=["is_paid"])
+                messages.success(request, "Order marked as paid.")
 
-                    if debited_now:
-                        messages.success(request, "Wallet debited and order marked as paid.")
-                    else:
-                        messages.success(request, "Order marked as paid (wallet already debited).")
+            return redirect("control:order_detail", order_id=order.id)
 
-                else:
-                    # COD (or anything else): just mark paid
-                    order.is_paid = True
-                    order.save(update_fields=["is_paid"])
-                    messages.success(request, "Order marked as paid.")
+        # ---------------------------
+        # UNMARK PAID
+        # ---------------------------
+        elif action == "unmark_paid":
+            order.is_paid = False
+            order.save(update_fields=["is_paid"])
+            messages.success(request, "Order unmarked as paid.")
+            return redirect("control:order_detail", order_id=order.id)
+
+        # ---------------------------
+        # ASSIGN DELIVERY PERSON
+        # ---------------------------
+        elif action == "assign_delivery":
+            delivery_id = request.POST.get("delivery_person")
+
+            if not delivery_id:
+                messages.error(request, "Select delivery person.")
                 return redirect("control:order_detail", order_id=order.id)
 
-        # Optional: unmark paid (careful, we won't auto-refund)
-        elif action == "unmark_paid":
-            if not order.is_paid:
-                messages.warning(request, "This order is not marked as paid.")
-            else:
-                order.is_paid = False
-                order.save(update_fields=["is_paid"])
-                messages.success(request, "Order unmarked as paid. (No wallet refund was done.)")
+            delivery_user = get_object_or_404(User, id=delivery_id)
+
+            order.delivery_person = delivery_user
+            order.status = "assigned"
+
+            if not order.delivery_code:
+                order.delivery_code = _generate_delivery_code()
+
+            order.save(update_fields=["delivery_person", "status", "delivery_code"])
+
+            messages.success(request, "Delivery assigned.")
             return redirect("control:order_detail", order_id=order.id)
+
+        # ---------------------------
+        # UPDATE DELIVERY STATUS
+        # ---------------------------
+        elif action == "delivery_status":
+            new_status = (request.POST.get("status") or "").strip().lower()
+
+            if new_status in ["picked_up", "on_the_way", "delivered"]:
+                order.status = new_status
+                order.save(update_fields=["status"])
+                messages.success(request, "Delivery status updated.")
+
+            return redirect("control:order_detail", order_id=order.id)
+
+        # ---------------------------
+        # ADMIN VERIFY DELIVERY
+        # ---------------------------
+        elif action == "verify_delivery":
+            order.delivery_verified = True
+            order.status = "delivered"
+            order.save(update_fields=["delivery_verified", "status"])
+
+            messages.success(request, "Delivery verified.")
+            return redirect("control:order_detail", order_id=order.id)
+
+    delivery_people = User.objects.filter(profile__is_delivery_guy=True)
 
     return render(request, "control/order_detail.html", {
         "order": order,
         "allowed_statuses": sorted(list(allowed_statuses)),
+        "delivery_people": delivery_people,
     })
 
 
-# ---------------------------
-# (2) MENU MANAGEMENT
-# ---------------------------
+# =========================
+# RIDER UPDATE STATUS (FIXED WITH BETTER HANDLING)
+# =========================
+@staff_required
+def update_status(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+
+    # ensure rider owns order
+    if order.delivery_person != request.user:
+        messages.error(request, "Not your delivery.")
+        return redirect("delivery:dashboard")
+
+    if request.method == "POST":
+        new_status = request.POST.get("status")
+        
+        # Debug: Log the current status and requested status
+        print(f"Current status: {order.status}, Requested status: {new_status}")
+        
+        # Define valid status transitions
+        valid_transitions = {
+            "assigned": ["picked_up"],
+            "picked_up": ["on_the_way"],
+            "on_the_way": ["delivered"],
+        }
+        
+        # Check if the transition is valid
+        if new_status in valid_transitions.get(order.status, []):
+            old_status = order.status
+            order.status = new_status
+            order.save(update_fields=["status"])
+            
+            # Add success message based on status
+            if new_status == "picked_up":
+                messages.success(request, f"Order #{order.id} picked up successfully!")
+            elif new_status == "on_the_way":
+                messages.success(request, f"Order #{order.id} is on the way!")
+            elif new_status == "delivered":
+                messages.success(request, f"Order #{order.id} delivered successfully!")
+        else:
+            # Provide more helpful error message
+            if order.status == new_status:
+                messages.error(request, f"Order #{order.id} is already {new_status.replace('_', ' ')}.")
+            else:
+                messages.error(request, f"Cannot change order #{order.id} from '{order.status.replace('_', ' ')}' to '{new_status.replace('_', ' ')}'.")
+        
+        return redirect("delivery:dashboard")
+    
+    messages.error(request, "Invalid request method.")
+    return redirect("delivery:dashboard")
+
+
+# =========================
+# VERIFY DELIVERY CODE (RIDER)
+# =========================
+@staff_required
+def verify_code(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+
+    if order.delivery_person != request.user:
+        messages.error(request, "Not your delivery.")
+        return redirect("delivery:dashboard")
+
+    if request.method == "POST":
+        code = request.POST.get("code")
+
+        if not code:
+            messages.error(request, "Please enter the delivery code.")
+            return redirect("delivery:dashboard")
+        
+        if code != order.delivery_code:
+            messages.error(request, f"Invalid delivery code. Expected: {order.delivery_code}")
+            return redirect("delivery:dashboard")
+
+        order.status = "delivered"
+        order.delivery_verified = True
+        order.save(update_fields=["status", "delivery_verified"])
+
+        messages.success(request, f"Order #{order.id} delivery completed successfully!")
+        return redirect("delivery:dashboard")
+    
+    messages.error(request, "Invalid request method.")
+    return redirect("delivery:dashboard")
+
+
+# =========================
+# MENU MANAGEMENT
+# =========================
 @staff_required
 def menu_list(request):
     q = (request.GET.get("q") or "").strip()
@@ -299,15 +478,14 @@ def menu_list(request):
         "show_archived": show_archived,
     })
 
+
 @staff_required
 def toggle_food_availability(request, food_id):
-    if request.method != "POST":
-        return redirect("control:menu_list")
-
-    food = get_object_or_404(FoodItem, id=food_id)
-    food.available = not food.available
-    food.save(update_fields=["available"])
-    messages.success(request, f"Availability updated for: {food.name}")
+    if request.method == "POST":
+        food = get_object_or_404(FoodItem, id=food_id)
+        food.available = not food.available
+        food.save(update_fields=["available"])
+        messages.success(request, "Updated availability.")
     return redirect("control:menu_list")
 
 
@@ -318,55 +496,57 @@ def category_create(request):
         form.save()
         messages.success(request, "Category created.")
         return redirect("control:menu_list")
-    return render(request, "control/category_form.html", {"form": form, "mode": "create"})
+    return render(request, "control/category_form.html", {"form": form})
 
 
 @staff_required
 def category_edit(request, category_id):
     category = get_object_or_404(Category, id=category_id)
     form = CategoryForm(request.POST or None, instance=category)
+
     if request.method == "POST" and form.is_valid():
         form.save()
-        messages.success(request, "Category updated.")
+        messages.success(request, "Updated.")
         return redirect("control:menu_list")
-    return render(request, "control/category_form.html", {"form": form, "mode": "edit", "category": category})
+
+    return render(request, "control/category_form.html", {"form": form})
 
 
 @staff_required
 def food_create(request):
     form = FoodItemForm(request.POST or None, request.FILES or None)
+
     if request.method == "POST" and form.is_valid():
         form.save()
-        messages.success(request, "Food item created.")
+        messages.success(request, "Food created.")
         return redirect("control:menu_list")
-    return render(request, "control/food_form.html", {"form": form, "mode": "create"})
+
+    return render(request, "control/food_form.html", {"form": form})
 
 
 @staff_required
 def food_edit(request, food_id):
     food = get_object_or_404(FoodItem, id=food_id)
     form = FoodItemForm(request.POST or None, request.FILES or None, instance=food)
+
     if request.method == "POST" and form.is_valid():
         form.save()
-        messages.success(request, "Food item updated.")
+        messages.success(request, "Food updated.")
         return redirect("control:menu_list")
-    return render(request, "control/food_form.html", {"form": form, "mode": "edit", "food": food})
+
+    return render(request, "control/food_form.html", {"form": form})
 
 
-# ---------------------------
-# (1) WALLET TOPUPS REVIEW + TRANSACTIONS
-# ---------------------------
+# =========================
+# WALLET TOPUPS
+# =========================
 def _credit_wallet_once(staff_user, topup) -> bool:
-    """
-    Credit wallet for this topup exactly once.
-    Returns True if credited now, False if already credited.
-    """
     if hasattr(topup, "transaction") and topup.transaction is not None:
         return False
 
     wallet, _ = Wallet.objects.get_or_create(user=topup.user)
 
-    wallet.balance = wallet.balance + topup.amount
+    wallet.balance += topup.amount
     wallet.save(update_fields=["balance", "updated_at"])
 
     WalletTransaction.objects.create(
@@ -381,62 +561,26 @@ def _credit_wallet_once(staff_user, topup) -> bool:
 
 
 @staff_required
-def topups_list(request):
-    status = (request.GET.get("status") or "").strip().lower()
-
-    qs = WalletTopUp.objects.select_related("user", "reviewed_by").order_by("-created_at")
-    allowed = {"pending", "approved", "rejected"}
-    if status in allowed:
-        qs = qs.filter(status=status)
-
-    topups = qs[:250]
-    return render(request, "control/topups_list.html", {"topups": topups, "status": status})
-
-
-@staff_required
 def topup_review(request, topup_id):
-    topup = get_object_or_404(
-        WalletTopUp.objects.select_related("user", "reviewed_by"),
-        id=topup_id
-    )
+    topup = get_object_or_404(WalletTopUp, id=topup_id)
 
     if request.method == "POST":
-        action = (request.POST.get("action") or "").strip()
-        note = (request.POST.get("admin_note") or "").strip()
+        action = request.POST.get("action")
 
         with transaction.atomic():
-            topup = WalletTopUp.objects.select_for_update().select_related("user").get(id=topup.id)
-
-            if topup.status != "pending":
-                messages.warning(request, "This top-up has already been reviewed.")
-                return redirect("control:topup_review", topup_id=topup.id)
+            topup = WalletTopUp.objects.select_for_update().get(id=topup.id)
 
             if action == "approve":
-                credited_now = _credit_wallet_once(request.user, topup)
-
+                _credit_wallet_once(request.user, topup)
                 topup.status = "approved"
-                topup.reviewed_by = request.user
-                topup.reviewed_at = timezone.now()
-                topup.admin_note = note
-                topup.save(update_fields=["status", "reviewed_by", "reviewed_at", "admin_note"])
-
-                messages.success(
-                    request,
-                    "Top-up approved and wallet credited." if credited_now else "Top-up approved (already credited)."
-                )
-                return redirect("control:topups_list")
-
-            if action == "reject":
+            elif action == "reject":
                 topup.status = "rejected"
-                topup.reviewed_by = request.user
-                topup.reviewed_at = timezone.now()
-                topup.admin_note = note or "Rejected by admin."
-                topup.save(update_fields=["status", "reviewed_by", "reviewed_at", "admin_note"])
 
-                messages.success(request, "Top-up rejected.")
-                return redirect("control:topups_list")
+            topup.reviewed_by = request.user
+            topup.reviewed_at = timezone.now()
+            topup.save()
 
-            messages.error(request, "Invalid action.")
+        return redirect("control:topups_list")
 
     return render(request, "control/topup_review.html", {"topup": topup})
 
@@ -446,4 +590,5 @@ def wallet_transactions(request):
     txs = WalletTransaction.objects.select_related(
         "wallet", "wallet__user", "order", "topup"
     ).order_by("-created_at")[:400]
+
     return render(request, "control/transactions.html", {"txs": txs})
