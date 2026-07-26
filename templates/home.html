@@ -52,6 +52,38 @@
     color: rgba(255, 255, 255, .85);
   }
 
+  /* Case Study Card */
+  .case-study-card {
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.08), rgba(255, 255, 255, 0.03));
+    border: 1px solid rgba(255, 193, 7, 0.25);
+    border-radius: 24px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+    transition: transform 0.2s;
+    padding: 1rem 1.5rem;
+    text-align: center;
+  }
+  
+  .case-study-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 193, 7, 0.4);
+  }
+  
+  .case-study-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #ffc107;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 0;
+  }
+  
+  .case-study-title i {
+    font-size: 1.5rem;
+  }
+
   /* Map box */
   #homeMap {
     width: 100%;
@@ -67,6 +99,14 @@
     color: rgba(255, 255, 255, .65);
   }
 </style>
+
+<!-- Case Study: Glovo Section -->
+<div class="case-study-card">
+  <div class="case-study-title">
+    <i class="bi bi-graph-up"></i>
+    Case Study: Glovo — Nigeria's Fastest-Growing Delivery Platform
+  </div>
+</div>
 
 <!-- HERO (Premium) with MAP -->
 <section class="hero-wrap p-4 p-md-5 mb-4">
@@ -255,26 +295,23 @@
             {{ f.description|truncatewords:15 }}
           </p>
 
-        
+          <div class="mt-auto d-flex gap-2">
+            <a class="btn btn-outline-light btn-sm rounded-pill flex-grow-1"
+               href="{% url 'menu:food_detail' f.id %}">View</a>
 
-<div class="mt-auto d-flex gap-2">
-  <a class="btn btn-outline-light btn-sm rounded-pill flex-grow-1"
-     href="{% url 'menu:food_detail' f.id %}">View</a>
-
-  <div class="cart-stepper flex-grow-1" data-food-id="{{ f.id }}">
-    {% if f.id in cart_item_ids %}
-      <div class="stepper-controls d-flex align-items-center justify-content-center gap-1 w-100">
-        <button class="btn btn-warning btn-sm rounded-pill px-2 stepper-dec">−</button>
-        <span class="stepper-qty fw-bold px-1">{{ cart_quantities|get_item:f.id }}</span>
-        <button class="btn btn-warning btn-sm rounded-pill px-2 stepper-inc">+</button>
-      </div>
-    {% else %}
-      <button class="btn btn-warning btn-sm rounded-pill w-100 stepper-add">Add to Cart</button>
-    {% endif %}
-  </div>
-</div>
+            <div class="cart-stepper flex-grow-1" data-food-id="{{ f.id }}">
+              {% if f.id in cart_item_ids %}
+                <div class="stepper-controls d-flex align-items-center justify-content-center gap-1 w-100">
+                  <button class="btn btn-warning btn-sm rounded-pill px-2 stepper-dec">−</button>
+                  <span class="stepper-qty fw-bold px-1">{{ cart_quantities|get_item:f.id }}</span>
+                  <button class="btn btn-warning btn-sm rounded-pill px-2 stepper-inc">+</button>
+                </div>
+              {% else %}
+                <button class="btn btn-warning btn-sm rounded-pill w-100 stepper-add">Add to Cart</button>
+              {% endif %}
+            </div>
+          </div>
         </div>
-
       </div>
     </div>
     {% empty %}
@@ -338,6 +375,7 @@
     });
   })();
 </script>
+
 <script>
 const CART_URL = "{% url 'orders:update_cart_ajax' %}";
 const CSRF = "{{ csrf_token }}";
@@ -349,7 +387,7 @@ async function cartRequest(foodId, action) {
     body: JSON.stringify({ food_id: foodId, action })
   });
   const data = await res.json();
-  console.log('Cart response:', data); // ← check this in browser console
+  console.log('Cart response:', data);
   return data;
 }
 
@@ -372,19 +410,16 @@ function updateCartBadge(count) {
     
     if (count > 0) {
       if (!badge) {
-        // Create badge if it doesn't exist
         badge = document.createElement('span');
         badge.className = 'cart-badge';
         btn.appendChild(badge);
       }
       badge.textContent = count;
     } else {
-      // Remove badge when count is 0
       if (badge) badge.remove();
     }
   });
 
-  // Update hero stat card on home page
   const heroStat = document.querySelector('.stat-card .fw-bold');
   if (heroStat) heroStat.textContent = count;
 }
